@@ -132,7 +132,7 @@ fun ImagePreviewScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Black.copy(alpha = 0.75f)
+                    containerColor = Color.Black.copy(alpha = 0.45f)
                 )
             )
         }
@@ -156,7 +156,7 @@ fun ImagePreviewScreen(
                     state = pagerState,
                     modifier = Modifier.fillMaxSize()
                 ) { page ->
-                    val scale = remember { Animatable(0.75f) }
+                    val scale = remember { Animatable(1f) }
                     val scope = rememberCoroutineScope()
                     var offsetX by remember { mutableFloatStateOf(0f) }
                     var offsetY by remember { mutableFloatStateOf(0f) }
@@ -186,12 +186,12 @@ fun ImagePreviewScreen(
                                                     isScaling = true
                                                     scope.launch {
                                                         scale.snapTo(
-                                                            (scale.value * zoomChange).fastCoerceIn(0.75f, 35f)
+                                                            (scale.value * zoomChange).fastCoerceIn(1f, 35f)
                                                         )
                                                     }
                                                 }
 
-                                                val shouldConsume = (scale.value > 0.85f) || isScaling
+                                                val shouldConsume = (scale.value > 1f) || isScaling
 
                                                 if (shouldConsume) {
                                                     val limit = calculateOffsetLimit(
