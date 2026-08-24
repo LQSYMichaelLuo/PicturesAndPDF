@@ -2,7 +2,6 @@ package io.github.lqsymichaelluo.picturesandpdf
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
@@ -29,7 +28,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
@@ -45,6 +43,7 @@ import androidx.compose.ui.util.fastCoerceIn
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.wear.compose.foundation.pager.HorizontalPager
 import androidx.wear.compose.foundation.pager.rememberPagerState
+import coil.compose.AsyncImage
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
@@ -164,8 +163,8 @@ fun ImagePreviewScreen(
                     Box(
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        Image(
-                            bitmap = bitmapList[page].asImageBitmap(),
+                        AsyncImage(
+                            model = bitmapList[page],
                             contentDescription = null,
                             modifier = Modifier
                                 .fillMaxSize()

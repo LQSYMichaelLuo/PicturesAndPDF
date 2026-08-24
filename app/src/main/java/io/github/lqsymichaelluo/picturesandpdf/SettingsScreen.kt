@@ -1,5 +1,6 @@
 package io.github.lqsymichaelluo.picturesandpdf
 
+import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -43,6 +44,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupPositionProvider
+import androidx.core.net.toUri
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -135,6 +137,21 @@ fun SettingsScreen(
                 checked = debugState,
                 onCheckedChange = {
                     viewModel.toggleDebug()
+                }
+            )
+            Divider()
+            SettingsGroupTitle("关于")
+            ListItem(
+                headlineContent = { Text("在 Github 上查看源码") },
+                supportingContent = { Text("Apache License 2.0") },
+                modifier = Modifier.clickable{
+                    val intent = CustomTabsIntent.Builder()
+                        .setShowTitle(true)
+                        .build()
+                    intent.launchUrl(
+                        context,
+                        "https://github.com/LQSYMichaelLuo/PicturesAndPDF".toUri()
+                    )
                 }
             )
             /*/

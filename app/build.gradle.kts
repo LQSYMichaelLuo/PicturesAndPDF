@@ -72,10 +72,10 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
-    implementation("com.google.code.gson:gson:2.10.1")
+    implementation("com.google.code.gson:gson:2.14.0")
     implementation(project(":shared"))
     implementation (libs.glide)
     implementation("com.github.bumptech.glide:compose:1.0.0-beta10")
-    //implementation("io.coil-kt.coil3:coil-compose:3.3.0")
-    //implementation("io.coil-kt.coil3:coil-network-ktor3:3.3.0")
+    implementation(libs.coil.compose)
+    implementation(libs.androidx.browser)
 }
