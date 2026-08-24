@@ -5,6 +5,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -53,6 +54,7 @@ import kotlin.math.absoluteValue
 fun ImagePreviewScreen(
     onBack: () -> Unit = {},
     imagePreviewViewModel: ImagePreviewViewModel,
+    sortImage: () -> Unit = {}
 ) {
     val density = LocalDensity.current
     var containerSize by remember { mutableStateOf(IntSize.Zero) }
@@ -185,9 +187,14 @@ fun ImagePreviewScreen(
                                                     isScaling = true
                                                     scope.launch {
                                                         scale.snapTo(
-                                                            (scale.value * zoomChange).fastCoerceIn(1f, 35f)
+                                                            (scale.value * zoomChange).fastCoerceIn(0.75f, 35f)
                                                         )
                                                     }
+                                                }
+
+                                                if (scale.value <= 0.8f && !imagePreviewViewModel.hasTriggerSort.value){
+                                                    imagePreviewViewModel.setTriggerSort(true)
+                                                    sortImage()
                                                 }
 
                                                 val shouldConsume = (scale.value > 1f) || isScaling
@@ -214,6 +221,22 @@ fun ImagePreviewScreen(
 
                                         }
                                     }
+                                }
+                                .pointerInput(Unit) {
+                                    detectTapGestures(
+                                        onDoubleTap = {
+                                            scope.launch {
+                                                val target = if (scale.value != 1f) 1f else 2.5f
+                                                scale.animateTo(
+                                                    target
+                                                )
+                                                if (target == 1f) {
+                                                    offsetX = 0f
+                                                    offsetY = 0f
+                                                }
+                                            }
+                                        }
+                                    )
                                 }
                                 .graphicsLayer(
                                     scaleX = scale.value,

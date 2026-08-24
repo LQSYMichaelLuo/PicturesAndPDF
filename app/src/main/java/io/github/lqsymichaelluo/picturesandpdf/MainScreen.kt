@@ -3,8 +3,6 @@ package io.github.lqsymichaelluo.picturesandpdf
 import android.content.Intent
 import android.view.DragEvent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.AnimatedVisibilityScope
-import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.expandHorizontally
@@ -99,8 +97,6 @@ fun MainScreen(
     rootNavController: NavHostController,
     viewModel: MainViewModel,
     imagePreviewViewModel: ImagePreviewViewModel,
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedVisibilityScope,
     onImportPicture: (String?) -> Unit,
     onImportPDF: () -> Unit,
     requestDragAndDropPermission: (DragEvent) -> Unit,
@@ -435,8 +431,6 @@ fun MainScreen(
                     viewModel = viewModel,
                     rootNavController = rootNavController,
                     imagePreviewViewModel = imagePreviewViewModel,
-                    sharedTransitionScope = sharedTransitionScope,
-                    animatedVisibilityScope = animatedVisibilityScope,
                     onImportPicture = onImportPicture,
                     onImportPDF = onImportPDF,
                     requestDragAndDropPermission = requestDragAndDropPermission,
@@ -709,8 +703,6 @@ fun MainScreen(
                 viewModel = viewModel,
                 rootNavController = rootNavController,
                 imagePreviewViewModel = imagePreviewViewModel,
-                sharedTransitionScope = sharedTransitionScope,
-                animatedVisibilityScope = animatedVisibilityScope,
                 onImportPicture = onImportPicture,
                 onImportPDF = onImportPDF,
                 requestDragAndDropPermission = requestDragAndDropPermission,

@@ -3,8 +3,6 @@ package io.github.lqsymichaelluo.picturesandpdf
 import android.graphics.Bitmap
 import android.view.DragEvent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.AnimatedVisibilityScope
-import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -88,8 +86,7 @@ fun Pic2PDFScreen(
     viewModel: MainViewModel,
     rootNavController: NavHostController,
     imagePreviewViewModel: ImagePreviewViewModel,
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedVisibilityScope,
+
     onImportPicture: (String?) -> Unit,
     requestDragAndDropPermission: (DragEvent) -> Unit,
     releaseDragAndDropPermission: () -> Unit
@@ -141,8 +138,6 @@ fun Pic2PDFScreen(
                         imagePreviewViewModel = imagePreviewViewModel,
                         modifier = Modifier.animateItem(),
                         rootNavController = rootNavController,
-                        sharedTransitionScope = sharedTransitionScope,
-                        animatedVisibilityScope = animatedVisibilityScope,
                         onPDFNameChange = { pdfName, newName ->
                             viewModel.changeOutputPDFName(pdfName, newName + ".pdf")
                         },
@@ -173,8 +168,6 @@ fun PictureGroupCard(
     bitmapList: List<Bitmap>,
     viewModel: MainViewModel,
     imagePreviewViewModel: ImagePreviewViewModel,
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedVisibilityScope,
     modifier: Modifier,
     onPDFNameChange: (oldName: String, newName: String) -> String,
     onImportPicture: (String?) -> Unit,

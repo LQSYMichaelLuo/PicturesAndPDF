@@ -17,11 +17,23 @@ class ImagePreviewViewModel : ViewModel() {
     private val _imagePreviewBackgroundColorStateMap =
         mutableMapOf<String, MutableState<ImagePreviewBackgroundColorState>>()
 
+    var hasTriggerSort = mutableStateOf(false)
+    var hasTriggerPreview = mutableStateOf(false)
     fun setBitmapList(bmp: List<Bitmap>) {
         _bitmapList.value = bmp
     }
     fun setCurrent(i: Int) {
         _current.intValue = i
+    }
+    fun setTriggerSort(
+        triggered: Boolean = false
+    ){
+        hasTriggerSort.value = triggered
+    }
+    fun setTriggerPreview(
+        triggered: Boolean = false
+    ){
+        hasTriggerPreview.value = triggered
     }
     fun clear() {
         _bitmapList.value = null

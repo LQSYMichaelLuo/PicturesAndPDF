@@ -1,9 +1,7 @@
 package io.github.lqsymichaelluo.picturesandpdf
 
 import android.view.DragEvent
-import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.SharedTransitionLayout
-import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
@@ -22,8 +20,6 @@ fun BottomNavGraph(
     viewModel: MainViewModel,
     imagePreviewViewModel: ImagePreviewViewModel,
     rootNavController: NavHostController,
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedVisibilityScope,
     onImportPicture: (String?) -> Unit,
     onImportPDF: () -> Unit,
     requestDragAndDropPermission: (DragEvent) -> Unit,
@@ -77,8 +73,6 @@ fun BottomNavGraph(
                     viewModel = viewModel,
                     rootNavController = rootNavController,
                     imagePreviewViewModel = imagePreviewViewModel,
-                    sharedTransitionScope = sharedTransitionScope,
-                    animatedVisibilityScope = animatedVisibilityScope,
                     onImportPicture = onImportPicture,
                     requestDragAndDropPermission = requestDragAndDropPermission,
                     releaseDragAndDropPermission = releaseDragAndDropPermission
@@ -103,8 +97,6 @@ fun SideNavGraph(
     viewModel: MainViewModel,
     imagePreviewViewModel: ImagePreviewViewModel,
     rootNavController: NavHostController,
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedVisibilityScope,
     onImportPicture: (String?) -> Unit,
     onImportPDF: () -> Unit,
     requestDragAndDropPermission: (DragEvent) -> Unit,
@@ -158,8 +150,6 @@ fun SideNavGraph(
                     viewModel = viewModel,
                     rootNavController = rootNavController,
                     imagePreviewViewModel = imagePreviewViewModel,
-                    sharedTransitionScope = sharedTransitionScope,
-                    animatedVisibilityScope = animatedVisibilityScope,
                     onImportPicture = onImportPicture,
                     requestDragAndDropPermission = requestDragAndDropPermission,
                     releaseDragAndDropPermission = releaseDragAndDropPermission

@@ -31,9 +31,7 @@ fun RootNavGraph(
                     requestDragAndDropPermission = requestDragAndDropPermission,
                     releaseDragAndDropPermission = releaseDragAndDropPermission,
                     rootNavController = navController,
-                    imagePreviewViewModel = imagePreviewViewModel,
-                    sharedTransitionScope = this@SharedTransitionLayout,
-                    animatedVisibilityScope = this@composable,
+                    imagePreviewViewModel = imagePreviewViewModel
                 )
             }
             composable("image_preview") {
@@ -45,7 +43,22 @@ fun RootNavGraph(
                         onBack = {
                             navController.popBackStack()
                             imagePreviewViewModel.clear()
+                        },
+                        sortImage = {
+                            navController.navigate("image_sorting")
+                            imagePreviewViewModel.setTriggerPreview(false)
                         }
+                    )
+                }
+            }
+            composable("image_sorting"){
+                PicturesPDFTheme {
+                    ImageSortingScreen(
+                        onBack = {
+                            navController.popBackStack()
+                            imagePreviewViewModel.setTriggerSort(false)
+                        },
+                        imagePreviewViewModel = imagePreviewViewModel
                     )
                 }
             }
