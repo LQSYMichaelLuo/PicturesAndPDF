@@ -8,7 +8,6 @@ import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -138,9 +137,10 @@ fun ImagePreviewScreen(
             )
         }
     ) { padding ->
+        var paddingValues by remember { mutableStateOf(padding) }
         Box(
             modifier = Modifier
-                .padding(padding)
+                //.padding(paddingValues)
                 .fillMaxSize()
                 .onSizeChanged { containerSize = it },
             contentAlignment = Alignment.Center
@@ -156,7 +156,7 @@ fun ImagePreviewScreen(
                     state = pagerState,
                     modifier = Modifier.fillMaxSize()
                 ) { page ->
-                    val scale = remember { Animatable(1f) }
+                    val scale = remember { Animatable(0.75f) }
                     val scope = rememberCoroutineScope()
                     var offsetX by remember { mutableFloatStateOf(0f) }
                     var offsetY by remember { mutableFloatStateOf(0f) }
@@ -186,29 +186,30 @@ fun ImagePreviewScreen(
                                                     isScaling = true
                                                     scope.launch {
                                                         scale.snapTo(
-                                                            (scale.value * zoomChange).fastCoerceIn(1f, 35f)
+                                                            (scale.value * zoomChange).fastCoerceIn(0.75f, 35f)
                                                         )
                                                     }
                                                 }
 
-                                                if (isScaling || scale.value > 1f) {
+                                                val shouldConsume = (scale.value > 0.85f) || isScaling
+
+                                                if (shouldConsume) {
                                                     val limit = calculateOffsetLimit(
                                                         scale = scale.value,
                                                         container = containerSize,
                                                         image = imageSize
                                                     )
-                                                    offsetX =
-                                                        (offsetX + panChange.x).fastCoerceIn(-limit.x, limit.x)
-                                                    offsetY =
-                                                        (offsetY + panChange.y).fastCoerceIn(-limit.y, limit.y)
+                                                    offsetX = (offsetX + panChange.x)
+                                                        .fastCoerceIn(-limit.x, limit.x)
+                                                    offsetY = (offsetY + panChange.y)
+                                                        .fastCoerceIn(-limit.y, limit.y)
 
                                                     event.changes.forEach { it.consume() }
                                                 } else {
-
                                                     totalDrag += panChange
-                                                }
-                                                if (!(!isScaling && totalDrag.x.absoluteValue > totalDrag.y.absoluteValue)) {
-                                                    event.changes.forEach { it.consume() }
+                                                    if (panChange.y.absoluteValue > panChange.x.absoluteValue) {
+                                                        event.changes.forEach { it.consume() }
+                                                    }
                                                 }
                                             } while (event.changes.any { it.pressed })
 
@@ -224,7 +225,6 @@ fun ImagePreviewScreen(
                         )
                     }
                 }
-
             }
         }
     }
