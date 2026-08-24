@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">圖片與PDF檔互轉</string>
+    <string name="pic2pdf">圖片轉為PDF檔</string>
+    <string name="pdf2pic">PDF檔轉為圖片</string>
+    <string name="title_name">當前功能名稱</string>
+    <string name="import_str">導入</string>
+    <string name="export_str">匯出</string>
+    <string name="settings">設定</string>
+    <string name="back">返回</string>
+    <string name="function">功能</string>
+    <string name="add">新增</string>
+    <string name="dragtip">拖曳至此處</string>
+</resources>

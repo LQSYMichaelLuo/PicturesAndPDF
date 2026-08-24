@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_settings"
+        android:shortcutId="settings"
+        android:shortcutLongLabel="@string/settings"
+        android:shortcutShortLabel="@string/settings">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="io.github.lqsymichaelluo.picturesandpdf.SettingsActivity"
+            android:targetPackage="io.github.lqsymichaelluo.picturesandpdf">
+            <extra
+                android:name="shortcut_id"
+                android:value="settings" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_function"
+        android:shortcutId="function"
+        android:shortcutLongLabel="@string/function"
+        android:shortcutShortLabel="@string/function">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="io.github.lqsymichaelluo.picturesandpdf.MainActivity"
+            android:targetPackage="io.github.lqsymichaelluo.picturesandpdf">
+            <extra
+                android:name="shortcut_id"
+                android:value="function" />
+        </intent>
+    </shortcut>
+</shortcuts>

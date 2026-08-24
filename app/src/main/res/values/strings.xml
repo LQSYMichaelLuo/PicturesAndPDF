@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">Pictures&amp;PDF</string>
+    <string name="pic2pdf">Picture to PDF</string>
+    <string name="pdf2pic">PDF to Picture</string>
+    <string name="title_name">CurrentFunctionName</string>
+    <string name="import_str">Import</string>
+    <string name="export_str">Export</string>
+    <string name="settings">Settings</string>
+    <string name="back">Back</string>
+    <string name="function">Functions</string>
+    <string name="add">ADD</string>
+    <string name="dragtip">Drag here</string>
+</resources>
