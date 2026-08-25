@@ -14,6 +14,8 @@ class ImagePreviewViewModel : ViewModel() {
     private val _current = mutableIntStateOf(0)
     val currentIndex: Int get() = _current.intValue
 
+    private val _currentPDFName = mutableStateOf("unknown.pdf")
+    val currentPDFName: String get() = _currentPDFName.value
     private val _imagePreviewBackgroundColorStateMap =
         mutableMapOf<String, MutableState<ImagePreviewBackgroundColorState>>()
 
@@ -24,6 +26,15 @@ class ImagePreviewViewModel : ViewModel() {
     }
     fun setCurrent(i: Int) {
         _current.intValue = i
+    }
+    fun setCurrentPDFName(name: String) {
+        _currentPDFName.value = name
+    }
+    fun moveBitmap(from: Int, to: Int) {
+        val list = _bitmapList.value ?: return
+        _bitmapList.value = list.toMutableList().apply {
+            add(to, removeAt(from))
+        }
     }
     fun setTriggerSort(
         triggered: Boolean = false

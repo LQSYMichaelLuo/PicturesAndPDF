@@ -342,6 +342,7 @@ fun PictureGroupCard(
                                                 selectedBitmap = bitmap
                                                 imagePreviewViewModel.setBitmapList(bitmapList)
                                                 imagePreviewViewModel.setCurrent(index)
+                                                imagePreviewViewModel.setCurrentPDFName("$newPDFNameTitle.pdf")
                                                 rootNavController.navigate("image_preview")
                                             },
                                             onLongClick = {

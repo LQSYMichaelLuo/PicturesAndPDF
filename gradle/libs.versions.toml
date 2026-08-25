@@ -5,6 +5,8 @@ coilCompose = "2.7.0"
 compiler = "4.16.0"
 coreKtx = "1.10.1"
 glide = "5.0.9"
+glideCompose = "1.0.0-beta10"
+gson = "2.14.0"
 junit = "4.13.2"
 junitVersion = "1.1.5"
 espressoCore = "3.5.1"
@@ -16,6 +18,7 @@ material3 = "1.4.0"
 navigationRuntimeKtx = "2.9.8"
 navigationCompose = "2.9.8"
 benchmarkTraceprocessor = "1.4.1"
+reorderable = "3.1.0"
 uiGraphics = "1.11.4"
 ui = "1.11.4"
 composeMaterial3 = "1.6.2"
@@ -36,6 +39,8 @@ coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose"
 compiler = { module = "com.github.bumptech.glide:compiler", version.ref = "glide" }
 compiler-v4160 = { module = "com.github.bumptech.glide:compiler", version.ref = "compiler" }
 glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
+glide-compose = { module = "com.github.bumptech.glide:compose", version.ref = "glideCompose" }
+gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -63,6 +68,7 @@ androidx-runner = { group = "androidx.test", name = "runner", version.ref = "run
 androidx-core = { group = "androidx.test", name = "core", version.ref = "core" }
 androidx-compose-material3-window-size-class1 = { group = "androidx.compose.material3", name = "material3-window-size-class", version.ref = "material3WindowSizeClass" }
 androidx-compose-material3-adaptive = { group = "androidx.compose.material3", name = "material3-adaptive", version.ref = "material3Adaptive" }
+reorderable = { module = "sh.calvin.reorderable:reorderable", version.ref = "reorderable" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

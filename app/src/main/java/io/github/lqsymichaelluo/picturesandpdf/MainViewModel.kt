@@ -18,10 +18,9 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.createBitmap
 import androidx.lifecycle.AndroidViewModel
@@ -46,7 +45,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val pdfInputList =
         mutableStateMapOf<String, PicturesOutputState>()
     //                   PDFName   State
-    private val _realHeightMap = mutableMapOf<String, MutableState<Dp>>()
     private val _deletePictureButtonShowMap = mutableMapOf<Int, MutableState<Boolean>>()
     private val _foldMap = mutableMapOf<String, MutableState<Boolean>>()
     private val _rotationMap = mutableMapOf<String, MutableState<Float>>()
@@ -97,8 +95,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private fun save() {
         ColorHistoryStorage.save(context, colorHistoryList.toList())
     }
-    fun realHeightState(name: String): MutableState<Dp> =
-        _realHeightMap.getOrPut(name){ mutableStateOf(200.dp)}
     fun deletePictureButtonShowState(imageId: Int): MutableState<Boolean> =
         _deletePictureButtonShowMap.getOrPut(imageId) { mutableStateOf(false) }
 
@@ -184,6 +180,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             pictureInputList.merge(outputName, list) { old, new ->
                 old.apply { addAll(new) }
             }
+        }
+    }
+
+    fun overridePicturesGroup(name: String, list: List<Bitmap>?) {
+        list?.let {
+            pictureInputList[name] = list.toMutableStateList()
         }
     }
 
@@ -380,7 +382,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val clip = ClipData.newPlainText(label, text)
         clipboard?.setPrimaryClip(clip)
     }
-
 
     fun dismissExportDialog() {
         _showDialog.value = false

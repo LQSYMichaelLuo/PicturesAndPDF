@@ -57,6 +57,10 @@ fun RootNavGraph(
                         onBack = {
                             navController.popBackStack()
                             imagePreviewViewModel.setTriggerSort(false)
+                            viewModel.overridePicturesGroup(
+                                name = imagePreviewViewModel.currentPDFName,
+                                list = imagePreviewViewModel.bitmapList
+                            )
                         },
                         imagePreviewViewModel = imagePreviewViewModel
                     )
