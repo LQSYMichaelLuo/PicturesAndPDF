@@ -2,6 +2,7 @@ package io.github.lqsymichaelluo.picturesandpdf
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -15,11 +16,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -29,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -98,7 +102,10 @@ fun ImageSortingScreen(
                     }
                 },
                 actions = {
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color(0)
+                )
             )
         }
     ) { padding ->
@@ -132,16 +139,16 @@ fun ImageSortingScreen(
             val itemWidthPx: Int = with(density) {
                 itemWidth.toPx().toInt()
             }
-            val density = LocalDensity.current
             LazyVerticalGrid(
                 columns = GridCells.Adaptive(114.dp),
                 state = gridState,
-                modifier = Modifier.fillMaxSize()
-                    .padding(paddingValues = PaddingValues(
+                modifier = Modifier
+                    .fillMaxSize(),
+                contentPadding = PaddingValues(
                     start = 3.dp,
                     top = padding.calculateTopPadding(),
                     end = 3.dp
-                ))
+                )
             ) {
                 imagePreviewViewModel.bitmapList?.let { list ->
                     items(list.size, key = {
@@ -152,7 +159,10 @@ fun ImageSortingScreen(
                             key = System.identityHashCode(list[index])
                         ) { isDragging ->
                             val elevation by animateDpAsState(
-                                if (isDragging) 8.dp else 0.dp
+                                if (isDragging) 16.dp else 0.dp
+                            )
+                            val borderStrokeWidth by animateDpAsState(
+                                if (isDragging) 0.dp else 0.5.dp
                             )
                             GlideImage(
                                 model = list[index],
@@ -160,14 +170,24 @@ fun ImageSortingScreen(
                                 contentScale = ContentScale.Crop,
                                 loading = placeholder(R.drawable.ic_pdf2pic),
                                 failure = placeholder(R.drawable.ic_error),
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier
+                                    .fillMaxWidth()
                                     .padding(3.dp)
                                     .onSizeChanged { size ->
                                         itemWidth = with(density) {
                                             size.width.toDp()
                                         }
                                     }
+                                    .shadow(
+                                        elevation = elevation,
+                                        shape = RoundedCornerShape(8.dp)
+                                    )
                                     .clip(RoundedCornerShape(8.dp))
+                                    .border(
+                                        width = borderStrokeWidth,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        shape = RoundedCornerShape(8.dp)
+                                    )
                                     .longPressDraggableHandle(
                                         onDragStarted = {
                                             hapticFeedback.performHapticFeedback(
@@ -176,7 +196,6 @@ fun ImageSortingScreen(
                                         }
                                     )
                                     .animateItem()
-                                    .shadow(elevation)
 
                             ) { requestBuilder ->
                                 requestBuilder

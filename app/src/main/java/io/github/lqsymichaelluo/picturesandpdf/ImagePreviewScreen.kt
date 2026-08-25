@@ -147,10 +147,9 @@ fun ImagePreviewScreen(
             contentAlignment = Alignment.Center
         ) {
             val bitmapList = imagePreviewViewModel.bitmapList
-            val current: Int = imagePreviewViewModel.currentIndex
             if (bitmapList != null) {
                 val pagerState = rememberPagerState(
-                    initialPage = current,
+                    initialPage = imagePreviewViewModel.currentIndex,
                     pageCount = { bitmapList.size }
                 )
                 HorizontalPager(
