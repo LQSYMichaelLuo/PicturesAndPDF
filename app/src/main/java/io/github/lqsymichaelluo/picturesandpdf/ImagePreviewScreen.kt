@@ -116,6 +116,25 @@ fun ImagePreviewScreen(
                     TooltipBox(
                         positionProvider = belowPositionProvider,
                         tooltip = {
+                            PlainTooltip { Text("给图片组排序") }
+                        },
+                        state = rememberTooltipState()
+                    ) {
+                        IconButton(
+                            onClick = {
+                                imagePreviewViewModel.setTriggerSort(true)
+                                sortImage()
+                            }
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_sort),
+                                contentDescription = null
+                            )
+                        }
+                    }
+                    TooltipBox(
+                        positionProvider = belowPositionProvider,
+                        tooltip = {
                             PlainTooltip { Text("转换底色") }
                         },
                         state = rememberTooltipState()
