@@ -66,6 +66,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -806,11 +807,11 @@ fun PDFCard(
                                 }
                                 isColorInputDialogShow = false
                             }
-                        ) { Text("确定") }
+                        ) { Text(stringResource(R.string.ok)) }
                     },
                     dismissButton = {
                         TextButton(onClick = { isColorInputDialogShow = false }) {
-                            Text("取消")
+                            Text(stringResource(R.string.cancel))
                         }
                     }
                 )
@@ -841,7 +842,7 @@ fun PDFCard(
                             )
                         ) {
                             Text(
-                                text = "确定"
+                                text = stringResource(R.string.ok)
                             )
                         }
                     },
@@ -851,7 +852,7 @@ fun PDFCard(
                                 isDeleteDialogShow = false
                             }
                         ) {
-                            Text("取消")
+                            Text(stringResource(R.string.cancel))
                         }
                     }
                 )

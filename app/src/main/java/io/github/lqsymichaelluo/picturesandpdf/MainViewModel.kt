@@ -134,7 +134,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun deletePDFDialogShowState(pdfName: String): MutableState<Boolean> =
         _deletePDFDialogMap.getOrPut(pdfName) { mutableStateOf(false) }
 
-
     fun setScale(name: String, scale: Float) {
         pdfInputList[name] = pdfInputList[name]?.copy(scale = scale) as PicturesOutputState
     }

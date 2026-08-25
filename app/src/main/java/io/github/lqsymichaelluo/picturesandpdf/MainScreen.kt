@@ -364,7 +364,7 @@ fun MainScreen(
                                             enabled = !isExporting,
                                             onClick = viewModel::dismissExportDialog
                                         ) {
-                                            Text("确定")
+                                            Text(stringResource(R.string.ok))
                                         }
                                     }
                                 )
@@ -639,7 +639,7 @@ fun MainScreen(
                                             enabled = !isExporting,
                                             onClick = viewModel::dismissExportDialog
                                         ) {
-                                            Text("确定")
+                                            Text(stringResource(R.string.ok))
                                         }
                                     }
                                 )

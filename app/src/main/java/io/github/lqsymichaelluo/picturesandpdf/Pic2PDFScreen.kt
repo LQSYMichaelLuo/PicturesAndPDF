@@ -503,7 +503,7 @@ fun PictureGroupCard(
                             )
                         ) {
                             Text(
-                                text = "确定"
+                                text = stringResource(R.string.ok)
                             )
                         }
                     },
@@ -513,7 +513,7 @@ fun PictureGroupCard(
                                 isDeleteDialogShow = false
                             }
                         ) {
-                            Text("取消")
+                            Text(stringResource(R.string.cancel))
                         }
                     }
                 )
@@ -558,7 +558,7 @@ fun PictureGroupCard(
                                     newPDFName = finalName.dropLast(4)
                                 }
                             }) {
-                            Text("确定")
+                            Text(stringResource(R.string.ok))
                         }
                     },
                     dismissButton = {
@@ -567,7 +567,7 @@ fun PictureGroupCard(
                                 isChangeNameDialogShow = false
                             }
                         ) {
-                            Text("取消")
+                            Text(stringResource(R.string.cancel))
                         }
                     }
                 )

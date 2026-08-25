@@ -1,7 +1,9 @@
 package io.github.lqsymichaelluo.picturesandpdf
 
+import android.content.Context
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,9 +12,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -21,12 +24,14 @@ import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,7 +61,7 @@ fun SettingsScreen(
         rememberTopAppBarState()
     )
     val debugState by viewModel.debuggable
-    val context = LocalContext.current
+    //val context = LocalContext.current
     val density = LocalDensity.current
     var clearEnabled by remember { mutableStateOf(true) }
     val belowPositionProvider = remember(density) {
@@ -104,6 +109,9 @@ fun SettingsScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
         ) {
+            val context = LocalContext.current
+            var licenseText by remember { mutableStateOf("License") }
+            var isLicenseShow by remember { mutableStateOf(false) }
             SettingsGroupTitle("存储")
             ListItem(
                 headlineContent = { Text("清理缓存") },
@@ -130,7 +138,7 @@ fun SettingsScreen(
                     viewModel.clearFileCache(context)
                 }
             )
-            Divider()
+            HorizontalDivider()
             SettingsGroupTitle("开发者选项")
             SettingsSwitchItem(
                 title = "Show Debug Text",
@@ -139,21 +147,57 @@ fun SettingsScreen(
                     viewModel.toggleDebug()
                 }
             )
-            Divider()
+            HorizontalDivider()
             SettingsGroupTitle("关于")
             ListItem(
                 headlineContent = { Text("在 Github 上查看源码") },
                 supportingContent = { Text("Apache License 2.0") },
-                modifier = Modifier.clickable{
-                    val intent = CustomTabsIntent.Builder()
-                        .setShowTitle(true)
-                        .build()
-                    intent.launchUrl(
-                        context,
-                        "https://github.com/LQSYMichaelLuo/PicturesAndPDF".toUri()
-                    )
-                }
+                modifier = Modifier.combinedClickable(
+                    onClick = {
+                        val intent = CustomTabsIntent.Builder()
+                            .setShowTitle(true)
+                            .build()
+                        intent.launchUrl(
+                            context,
+                            "https://github.com/LQSYMichaelLuo/PicturesAndPDF".toUri()
+                        )
+                    },
+                    onLongClick = {
+                        isLicenseShow = true
+                    }
+                )
             )
+            LaunchedEffect(Unit) {
+                licenseText = context.readAsset("LICENSE")
+            }
+            val licenseScrollState = rememberScrollState()
+            if (isLicenseShow) {
+                AlertDialog(
+                    onDismissRequest = {
+                        isLicenseShow = false
+                    },
+                    title = {
+                        Text("License")
+                    },
+                    text = {
+                        Text(
+                            text = licenseText,
+                            modifier = Modifier.verticalScroll(licenseScrollState)
+                        )
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                isLicenseShow = false
+                            }
+                        ) {
+                            Text(
+                                text = stringResource(R.string.ok)
+                            )
+                        }
+                    }
+                )
+            }
             /*/
             repeat(19) { index ->
                 SettingsGroupTitle("Settings Group ${index + 1}")
@@ -212,3 +256,6 @@ fun SettingsSwitchItem(
     }
 }
 
+fun Context.readAsset(fileName: String): String {
+    return assets.open(fileName).bufferedReader().use { it.readText() }
+}

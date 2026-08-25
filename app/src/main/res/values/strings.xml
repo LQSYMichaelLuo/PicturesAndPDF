@@ -10,4 +10,6 @@
     <string name="function">Functions</string>
     <string name="add">ADD</string>
     <string name="dragtip">Drag here</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
 </resources>

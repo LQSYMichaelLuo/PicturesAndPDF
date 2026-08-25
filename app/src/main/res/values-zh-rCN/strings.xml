@@ -11,4 +11,6 @@
     <string name="function">功能</string>
     <string name="add">添加</string>
     <string name="dragtip">拖入此处</string>
+    <string name="ok">确认</string>
+    <string name="cancel">取消</string>
 </resources>
