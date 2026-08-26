@@ -57,6 +57,7 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draganddrop.DragAndDropEvent
@@ -340,10 +341,15 @@ fun PictureGroupCard(
                                         modifier = thumbModifier.combinedClickable(
                                             onClick = {
                                                 selectedBitmap = bitmap
-                                                imagePreviewViewModel.setBitmapList(bitmapList)
-                                                imagePreviewViewModel.setCurrent(index)
-                                                imagePreviewViewModel.setCurrentPDFName("$newPDFNameTitle.pdf")
-                                                rootNavController.navigate("image_preview")
+                                                val imagePreviewData = ImagePreviewData(
+                                                    bitmapList = bitmapList.toMutableStateList(),
+                                                    currentIndex = index
+                                                )
+                                                imagePreviewViewModel.addImagePreviewList(
+                                                    pdfName = "$newPDFNameTitle.pdf",
+                                                    imagePreviewData = imagePreviewData
+                                                )
+                                                rootNavController.navigate("image_preview/$newPDFNameTitle.pdf")
                                             },
                                             onLongClick = {
                                                 deletePictureButtonShow = !deletePictureButtonShow

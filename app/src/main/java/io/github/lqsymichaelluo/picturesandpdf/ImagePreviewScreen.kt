@@ -2,7 +2,6 @@ package io.github.lqsymichaelluo.picturesandpdf
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
-import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -42,6 +41,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastCoerceIn
 import androidx.compose.ui.window.PopupPositionProvider
+import androidx.navigation.NavController
 import androidx.wear.compose.foundation.pager.HorizontalPager
 import androidx.wear.compose.foundation.pager.rememberPagerState
 import coil.compose.AsyncImage
@@ -52,13 +52,14 @@ import kotlin.math.absoluteValue
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalGlideComposeApi::class)
 @Composable
 fun ImagePreviewScreen(
+    pdfName: String = "unknown.pdf",
     onBack: () -> Unit = {},
     imagePreviewViewModel: ImagePreviewViewModel,
-    sortImage: () -> Unit = {}
+    navController: NavController
 ) {
     val density = LocalDensity.current
     var containerSize by remember { mutableStateOf(IntSize.Zero) }
-    val imageID = "image_" + imagePreviewViewModel.currentIndex
+    val imageID = "image_" + imagePreviewViewModel.imagePreviewList[pdfName]?.currentIndex
     var colorState by imagePreviewViewModel.imagePreviewBackgroundColorState(imageID)
     val belowPositionProvider = remember(density) {
         object : PopupPositionProvider {
@@ -122,8 +123,15 @@ fun ImagePreviewScreen(
                     ) {
                         IconButton(
                             onClick = {
-                                imagePreviewViewModel.setTriggerSort(true)
-                                sortImage()
+                                imagePreviewViewModel.setTriggerSort(
+                                    pdfName = pdfName,
+                                    triggered = true
+                                )
+                                navController.navigate("image_sorting/$pdfName")
+                                imagePreviewViewModel.setTriggerPreview(
+                                    pdfName = pdfName,
+                                    triggered = false
+                                )
                             }
                         ) {
                             Icon(
@@ -165,104 +173,115 @@ fun ImagePreviewScreen(
                 .onSizeChanged { containerSize = it },
             contentAlignment = Alignment.Center
         ) {
-            val bitmapList = imagePreviewViewModel.bitmapList
+            val bitmapList = imagePreviewViewModel.imagePreviewList[pdfName]?.bitmapList
             if (bitmapList != null) {
-                val pagerState = rememberPagerState(
-                    initialPage = imagePreviewViewModel.currentIndex,
-                    pageCount = { bitmapList.size }
-                )
-                HorizontalPager(
-                    state = pagerState,
-                    modifier = Modifier.fillMaxSize()
-                ) { page ->
-                    val scale = remember { Animatable(1f) }
-                    val scope = rememberCoroutineScope()
-                    var offsetX by remember { mutableFloatStateOf(0f) }
-                    var offsetY by remember { mutableFloatStateOf(0f) }
-                    var imageSize by remember { mutableStateOf(IntSize.Zero) }
-                    Box(
+                val pagerState = imagePreviewViewModel.imagePreviewList[pdfName]?.currentIndex?.let {
+                    rememberPagerState(
+                        initialPage = it,
+                        pageCount = { bitmapList.size }
+                    )
+                }
+                pagerState?.let {
+                    HorizontalPager(
+                        state = it,
                         modifier = Modifier.fillMaxSize()
-                    ) {
-                        AsyncImage(
-                            model = bitmapList[page],
-                            contentDescription = null,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .onSizeChanged { imageSize = it }
-                                .pointerInput(containerSize, imageSize) {
-                                    awaitPointerEventScope {
-                                        while (true) {
-                                            val down = awaitFirstDown(requireUnconsumed = false)
-                                            var totalDrag = Offset.Zero
-                                            var isScaling = false
+                    ) { page ->
+                        val scale = remember { Animatable(1f) }
+                        val scope = rememberCoroutineScope()
+                        var offsetX by remember { mutableFloatStateOf(0f) }
+                        var offsetY by remember { mutableFloatStateOf(0f) }
+                        var imageSize by remember { mutableStateOf(IntSize.Zero) }
+                        Box(
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            AsyncImage(
+                                model = bitmapList[page],
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .onSizeChanged { imageSize = it }
+                                    .pointerInput(containerSize, imageSize) {
+                                        awaitPointerEventScope {
+                                            while (true) {
+                                                //val down = awaitFirstDown(requireUnconsumed = false)
+                                                var totalDrag = Offset.Zero
+                                                var isScaling = false
 
-                                            do {
-                                                val event = awaitPointerEvent()
-                                                val zoomChange = event.calculateZoom()
-                                                val panChange = event.calculatePan()
+                                                do {
+                                                    val event = awaitPointerEvent()
+                                                    val zoomChange = event.calculateZoom()
+                                                    val panChange = event.calculatePan()
 
-                                                if (zoomChange != 1f) {
-                                                    isScaling = true
-                                                    scope.launch {
-                                                        scale.snapTo(
-                                                            (scale.value * zoomChange).fastCoerceIn(0.75f, 35f)
+                                                    if (zoomChange != 1f) {
+                                                        isScaling = true
+                                                        scope.launch {
+                                                            scale.snapTo(
+                                                                (scale.value * zoomChange).fastCoerceIn(0.75f, 35f)
+                                                            )
+                                                        }
+                                                    }
+
+                                                    if (scale.value <= 0.8f && !imagePreviewViewModel.imagePreviewList[pdfName]!!.hasTriggeredSort){
+                                                        imagePreviewViewModel.setTriggerSort(
+                                                            pdfName,
+                                                            triggered = true
+                                                        )
+                                                        navController.navigate("image_sorting/$pdfName")
+                                                        imagePreviewViewModel.setTriggerPreview(
+                                                            pdfName = pdfName,
+                                                            triggered = false
                                                         )
                                                     }
-                                                }
 
-                                                if (scale.value <= 0.8f && !imagePreviewViewModel.hasTriggerSort.value){
-                                                    imagePreviewViewModel.setTriggerSort(true)
-                                                    sortImage()
-                                                }
+                                                    val shouldConsume = (scale.value > 1f) || isScaling
 
-                                                val shouldConsume = (scale.value > 1f) || isScaling
+                                                    if (shouldConsume) {
+                                                        val limit = calculateOffsetLimit(
+                                                            scale = scale.value,
+                                                            container = containerSize,
+                                                            image = imageSize
+                                                        )
+                                                        offsetX = (offsetX + panChange.x)
+                                                            .fastCoerceIn(-limit.x, limit.x)
+                                                        offsetY = (offsetY + panChange.y)
+                                                            .fastCoerceIn(-limit.y, limit.y)
 
-                                                if (shouldConsume) {
-                                                    val limit = calculateOffsetLimit(
-                                                        scale = scale.value,
-                                                        container = containerSize,
-                                                        image = imageSize
-                                                    )
-                                                    offsetX = (offsetX + panChange.x)
-                                                        .fastCoerceIn(-limit.x, limit.x)
-                                                    offsetY = (offsetY + panChange.y)
-                                                        .fastCoerceIn(-limit.y, limit.y)
-
-                                                    event.changes.forEach { it.consume() }
-                                                } else {
-                                                    totalDrag += panChange
-                                                    if (panChange.y.absoluteValue > panChange.x.absoluteValue) {
                                                         event.changes.forEach { it.consume() }
+                                                    } else {
+                                                        totalDrag += panChange
+                                                        if (panChange.y.absoluteValue > panChange.x.absoluteValue) {
+                                                            event.changes.forEach { it.consume() }
+                                                        }
                                                     }
-                                                }
-                                            } while (event.changes.any { it.pressed })
+                                                } while (event.changes.any { it.pressed })
 
-                                        }
-                                    }
-                                }
-                                .pointerInput(Unit) {
-                                    detectTapGestures(
-                                        onDoubleTap = {
-                                            scope.launch {
-                                                val target = if (scale.value != 1f) 1f else 2.5f
-                                                scale.animateTo(
-                                                    target
-                                                )
-                                                if (target == 1f) {
-                                                    offsetX = 0f
-                                                    offsetY = 0f
-                                                }
                                             }
                                         }
-                                    )
-                                }
-                                .graphicsLayer(
-                                    scaleX = scale.value,
-                                    scaleY = scale.value,
-                                    translationX = offsetX,
-                                    translationY = offsetY
-                                ),
-                        )
+                                    }
+                                    .pointerInput(Unit) {
+                                        detectTapGestures(
+                                            onDoubleTap = {
+                                                scope.launch {
+                                                    val target = if (scale.value != 1f) 1f else 2.5f
+                                                    scale.animateTo(
+                                                        target
+                                                    )
+                                                    if (target == 1f) {
+                                                        offsetX = 0f
+                                                        offsetY = 0f
+                                                    }
+                                                }
+                                            }
+                                        )
+                                    }
+                                    .graphicsLayer(
+                                        scaleX = scale.value,
+                                        scaleY = scale.value,
+                                        translationX = offsetX,
+                                        translationY = offsetY
+                                    ),
+                            )
+                        }
                     }
                 }
             }

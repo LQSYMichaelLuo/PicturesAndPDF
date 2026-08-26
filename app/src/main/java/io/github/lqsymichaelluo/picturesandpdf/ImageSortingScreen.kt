@@ -57,6 +57,7 @@ import sh.calvin.reorderable.rememberReorderableLazyGridState
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalGlideComposeApi::class)
 @Composable
 fun ImageSortingScreen(
+    pdfName: String = "unknown.pdf",
     onBack: () -> Unit = {},
     imagePreviewViewModel: ImagePreviewViewModel
 ) {
@@ -120,8 +121,11 @@ fun ImageSortingScreen(
                             if (zoomChange != 1f) {
                                 scale = (scale * zoomChange).coerceIn(0.5f, 5f)
 
-                                if (scale >= 1.2f && !imagePreviewViewModel.hasTriggerPreview.value) {
-                                    imagePreviewViewModel.setTriggerPreview(true)
+                                if (scale >= 1.2f && !imagePreviewViewModel.imagePreviewList[pdfName]!!.hasTriggeredPreview) {
+                                    imagePreviewViewModel.setTriggerPreview(
+                                        pdfName = pdfName,
+                                        triggered = true
+                                    )
                                     onBack()
                                 }
                             }
@@ -132,7 +136,10 @@ fun ImageSortingScreen(
         ) {
             val gridState = rememberLazyGridState()
             val reorderableState = rememberReorderableLazyGridState(gridState) { from, to ->
-                imagePreviewViewModel.moveBitmap(from.index, to.index)
+                imagePreviewViewModel.moveBitmap(
+                    pdfName = pdfName,
+                    from.index,
+                    to.index)
                 hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
             }
             var itemWidth by remember { mutableStateOf(92.dp) }
@@ -150,7 +157,7 @@ fun ImageSortingScreen(
                     end = 3.dp
                 )
             ) {
-                imagePreviewViewModel.bitmapList?.let { list ->
+                imagePreviewViewModel.imagePreviewList[pdfName]!!.bitmapList.let { list ->
                     items(list.size, key = {
                         System.identityHashCode(list[it])
                     }) { index ->

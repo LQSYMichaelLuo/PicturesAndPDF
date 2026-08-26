@@ -8,6 +8,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import io.github.lqsymichaelluo.picturesandpdf.ui.theme.PicturesPDFTheme
 
+const val image_preview_id = "image_preview/{pdfName}"
+const val image_sorting_id = "image_sorting/{pdfName}"
+
 @Composable
 fun RootNavGraph(
     viewModel: MainViewModel,
@@ -34,36 +37,43 @@ fun RootNavGraph(
                     imagePreviewViewModel = imagePreviewViewModel
                 )
             }
-            composable("image_preview") {
+            composable(image_preview_id) {
+                val pdfName = it.arguments?.getString("pdfName")
                 PicturesPDFTheme(
                     darkTheme = true
                 ) {
-                    ImagePreviewScreen(
-                        imagePreviewViewModel = imagePreviewViewModel,
-                        onBack = {
-                            navController.popBackStack()
-                            imagePreviewViewModel.clear()
-                        },
-                        sortImage = {
-                            navController.navigate("image_sorting")
-                            imagePreviewViewModel.setTriggerPreview(false)
-                        }
-                    )
+                    pdfName?.let {
+                        ImagePreviewScreen(
+                            pdfName = pdfName,
+                            imagePreviewViewModel = imagePreviewViewModel,
+                            onBack = {
+                                navController.popBackStack()
+                            },
+                            navController = navController
+                        )
+                    }
                 }
             }
-            composable("image_sorting"){
+            composable(image_sorting_id) {
+                val pdfName = it.arguments?.getString("pdfName")
                 PicturesPDFTheme {
-                    ImageSortingScreen(
-                        onBack = {
-                            navController.popBackStack()
-                            imagePreviewViewModel.setTriggerSort(false)
-                            viewModel.overridePicturesGroup(
-                                name = imagePreviewViewModel.currentPDFName,
-                                list = imagePreviewViewModel.bitmapList
-                            )
-                        },
-                        imagePreviewViewModel = imagePreviewViewModel
-                    )
+                    pdfName?.let {
+                        ImageSortingScreen(
+                            pdfName = pdfName,
+                            onBack = {
+                                navController.popBackStack()
+                                imagePreviewViewModel.setTriggerSort(
+                                    pdfName = pdfName,
+                                    triggered = false
+                                )
+                                viewModel.overridePicturesGroup(
+                                    name = pdfName,
+                                    list = imagePreviewViewModel.imagePreviewList[pdfName]?.bitmapList
+                                )
+                            },
+                            imagePreviewViewModel = imagePreviewViewModel
+                        )
+                    }
                 }
             }
         }

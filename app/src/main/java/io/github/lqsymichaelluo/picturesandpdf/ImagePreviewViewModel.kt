@@ -2,52 +2,51 @@ package io.github.lqsymichaelluo.picturesandpdf
 
 import android.graphics.Bitmap
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
 
 class ImagePreviewViewModel : ViewModel() {
-
-    private val _bitmapList = mutableStateOf<List<Bitmap>?>(null)
-    val bitmapList: List<Bitmap>? get() = _bitmapList.value
-
-    private val _current = mutableIntStateOf(0)
-    val currentIndex: Int get() = _current.intValue
-
-    private val _currentPDFName = mutableStateOf("unknown.pdf")
-    val currentPDFName: String get() = _currentPDFName.value
     private val _imagePreviewBackgroundColorStateMap =
         mutableMapOf<String, MutableState<ImagePreviewBackgroundColorState>>()
+    val imagePreviewList =
+        mutableMapOf<String, ImagePreviewData>()
 
-    var hasTriggerSort = mutableStateOf(false)
-    var hasTriggerPreview = mutableStateOf(false)
-    fun setBitmapList(bmp: List<Bitmap>) {
-        _bitmapList.value = bmp
+    fun addImagePreviewList(
+        pdfName: String,
+        imagePreviewData: ImagePreviewData
+    ){
+        imagePreviewList[pdfName] = imagePreviewData
     }
-    fun setCurrent(i: Int) {
-        _current.intValue = i
-    }
-    fun setCurrentPDFName(name: String) {
-        _currentPDFName.value = name
-    }
-    fun moveBitmap(from: Int, to: Int) {
-        val list = _bitmapList.value ?: return
-        _bitmapList.value = list.toMutableList().apply {
-            add(to, removeAt(from))
-        }
+    fun moveBitmap(pdfName: String, from: Int, to: Int) {
+        val list: SnapshotStateList<Bitmap> =
+            imagePreviewList[pdfName]?.bitmapList ?: return
+
+        if (from == to) return
+        if (from !in list.indices || to !in list.indices) return
+
+        val item = list.removeAt(from)
+        list.add(to, item)
     }
     fun setTriggerSort(
+        pdfName: String = "unknown.pdf",
         triggered: Boolean = false
     ){
-        hasTriggerSort.value = triggered
+        imagePreviewList[pdfName]?.let {
+            imagePreviewList[pdfName] = it.copy(
+                hasTriggeredSort = triggered
+            )
+        }
     }
     fun setTriggerPreview(
+        pdfName: String = "unknown.pdf",
         triggered: Boolean = false
     ){
-        hasTriggerPreview.value = triggered
-    }
-    fun clear() {
-        _bitmapList.value = null
+        imagePreviewList[pdfName]?.let {
+            imagePreviewList[pdfName] = it.copy(
+                hasTriggeredPreview = triggered
+            )
+        }
     }
     fun imagePreviewBackgroundColorState(imageID: String): MutableState<ImagePreviewBackgroundColorState> =
         _imagePreviewBackgroundColorStateMap.getOrPut(imageID) {
