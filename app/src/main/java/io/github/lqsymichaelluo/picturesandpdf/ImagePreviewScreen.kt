@@ -53,13 +53,14 @@ import kotlin.math.absoluteValue
 @Composable
 fun ImagePreviewScreen(
     pdfName: String = "unknown.pdf",
+    currentIndex: Int = 0,
     onBack: () -> Unit = {},
     imagePreviewViewModel: ImagePreviewViewModel,
     navController: NavController
 ) {
     val density = LocalDensity.current
     var containerSize by remember { mutableStateOf(IntSize.Zero) }
-    val imageID = "image_" + imagePreviewViewModel.imagePreviewList[pdfName]?.currentIndex
+    val imageID = "image_$currentIndex"
     var colorState by imagePreviewViewModel.imagePreviewBackgroundColorState(imageID)
     val belowPositionProvider = remember(density) {
         object : PopupPositionProvider {
@@ -175,13 +176,11 @@ fun ImagePreviewScreen(
         ) {
             val bitmapList = imagePreviewViewModel.imagePreviewList[pdfName]?.bitmapList
             if (bitmapList != null) {
-                val pagerState = imagePreviewViewModel.imagePreviewList[pdfName]?.currentIndex?.let {
-                    rememberPagerState(
-                        initialPage = it,
-                        pageCount = { bitmapList.size }
-                    )
-                }
-                pagerState?.let {
+                val pagerState = rememberPagerState(
+                    initialPage = currentIndex,
+                    pageCount = { bitmapList.size }
+                )
+                pagerState.let {
                     HorizontalPager(
                         state = it,
                         modifier = Modifier.fillMaxSize()

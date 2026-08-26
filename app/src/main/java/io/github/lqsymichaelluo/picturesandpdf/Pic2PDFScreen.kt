@@ -342,14 +342,13 @@ fun PictureGroupCard(
                                             onClick = {
                                                 selectedBitmap = bitmap
                                                 val imagePreviewData = ImagePreviewData(
-                                                    bitmapList = bitmapList.toMutableStateList(),
-                                                    currentIndex = index
+                                                    bitmapList = bitmapList.toMutableStateList()
                                                 )
                                                 imagePreviewViewModel.addImagePreviewList(
                                                     pdfName = "$newPDFNameTitle.pdf",
                                                     imagePreviewData = imagePreviewData
                                                 )
-                                                rootNavController.navigate("image_preview/$newPDFNameTitle.pdf")
+                                                rootNavController.navigate("image_preview/$newPDFNameTitle.pdf/$index")
                                             },
                                             onLongClick = {
                                                 deletePictureButtonShow = !deletePictureButtonShow

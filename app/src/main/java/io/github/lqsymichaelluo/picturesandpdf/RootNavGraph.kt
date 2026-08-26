@@ -8,7 +8,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import io.github.lqsymichaelluo.picturesandpdf.ui.theme.PicturesPDFTheme
 
-const val image_preview_id = "image_preview/{pdfName}"
+const val image_preview_id = "image_preview/{pdfName}/{index}"
 const val image_sorting_id = "image_sorting/{pdfName}"
 
 @Composable
@@ -38,20 +38,20 @@ fun RootNavGraph(
                 )
             }
             composable(image_preview_id) {
-                val pdfName = it.arguments?.getString("pdfName")
+                val pdfName = it.arguments?.getString("pdfName")!!
+                val index = it.arguments?.getString("index")!!.toInt()
                 PicturesPDFTheme(
                     darkTheme = true
                 ) {
-                    pdfName?.let {
-                        ImagePreviewScreen(
-                            pdfName = pdfName,
-                            imagePreviewViewModel = imagePreviewViewModel,
-                            onBack = {
-                                navController.popBackStack()
-                            },
-                            navController = navController
-                        )
-                    }
+                    ImagePreviewScreen(
+                        pdfName = pdfName,
+                        currentIndex = index,
+                        imagePreviewViewModel = imagePreviewViewModel,
+                        onBack = {
+                            navController.popBackStack()
+                        },
+                        navController = navController
+                    )
                 }
             }
             composable(image_sorting_id) {
