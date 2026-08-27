@@ -87,11 +87,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         save()
     }
 
-    fun removeColor(color: String) {
-        colorHistoryList.removeAll { it.color == color }
-        save()
-    }
-
     private fun save() {
         ColorHistoryStorage.save(context, colorHistoryList.toList())
     }
@@ -279,8 +274,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     file = file
                 )
                 AppFlags.uploadedPDFList.add(file.name)
-            } catch (e: SecurityException) {
-                //e.printStackTrace()
+            } catch (_: SecurityException) {
             }
         }
         releasePermissionUnit()
@@ -412,7 +406,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         Convertor().PicturesToPDFForApp(
                             pic = bitmaps,
                             pdf = os as FileOutputStream,
-                            callBack = {i, pageCount ->}
+                            callBack = {i, pageCount ->
+                                TODO("$i is index, $pageCount is count")
+                            }
                         )
                     }
                     values.clear()
@@ -442,7 +438,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     pdf = state.file,
                     scale = state.scale,
                     backgroundColor = state.backgroundColor,
-                    callBack = {i, pageCount ->}
+                    callBack = {
+                        i, pageCount ->
+                        TODO("$i is index, $pageCount is count")
+                    }
                 )
 
                 if (state.toMultiplePictures) {

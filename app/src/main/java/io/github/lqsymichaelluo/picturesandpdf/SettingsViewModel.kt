@@ -4,10 +4,7 @@ import android.app.Application
 import android.content.Context
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.viewModelScope
 import com.bumptech.glide.Glide
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 
 class SettingsViewModel(app: Application) : AndroidViewModel(application = app) {
@@ -21,13 +18,6 @@ class SettingsViewModel(app: Application) : AndroidViewModel(application = app) 
         Prefs.setDebug(new)
     }
 
-
-    fun clearCache(context: Context) {
-        viewModelScope.launch(Dispatchers.IO) {
-            context.cacheDir.deleteRecursively()
-            context.externalCacheDir?.deleteRecursively()
-        }
-    }
     fun print(text: String){
         Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
     }

@@ -45,6 +45,7 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberTooltipState
@@ -199,7 +200,9 @@ fun PDFCard(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     TooltipBox(
-                        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                            TooltipAnchorPosition.Above
+                        ),
                         tooltip = { PlainTooltip { Text(pdfName) } },
                         state = rememberTooltipState(),
                     ) {
@@ -212,7 +215,9 @@ fun PDFCard(
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     TooltipBox(
-                        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                            TooltipAnchorPosition.Above
+                        ),
                         tooltip = { PlainTooltip { Text("改变输出图片精度") } },
                         state = rememberTooltipState()
                     ) {
@@ -231,7 +236,9 @@ fun PDFCard(
                     }
 
                     TooltipBox(
-                        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                            TooltipAnchorPosition.Above
+                        ),
                         tooltip = { PlainTooltip { Text("改变输出图片背景颜色") } },
                         state = rememberTooltipState()
                     ) {
@@ -247,10 +254,11 @@ fun PDFCard(
                             )
                         }
                     }
-                    //除此以外，当要输出一张长图时应出现操作区来选择对齐方式(预计8月21/22日加)
                     if (state.toMultiplePictures) {
                         TooltipBox(
-                            positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Above
+                            ),
                             tooltip = { PlainTooltip { Text("输出多张图") } },
                             state = rememberTooltipState()
                         ) {
@@ -265,7 +273,9 @@ fun PDFCard(
                         }
                     } else {
                         TooltipBox(
-                            positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Above
+                            ),
                             tooltip = { PlainTooltip { Text("输出一张长图") } },
                             state = rememberTooltipState()
                         ) {
@@ -281,7 +291,9 @@ fun PDFCard(
                     }
                     val deleteTooltipState = rememberTooltipState()
                     TooltipBox(
-                        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                            TooltipAnchorPosition.Above
+                        ),
                         tooltip = { PlainTooltip { Text("删除这个图片组") } },
                         state = deleteTooltipState,
                     ) {
@@ -457,7 +469,9 @@ fun PDFCard(
                                     Spacer(modifier = Modifier.width(24.dp))
 
                                     TooltipBox(
-                                        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                            TooltipAnchorPosition.Above
+                                        ),
                                         tooltip = { PlainTooltip { Text("手动输入背景颜色代码") } },
                                         state = rememberTooltipState()
                                     ) {
@@ -472,7 +486,9 @@ fun PDFCard(
                                     }
 
                                     TooltipBox(
-                                        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                            TooltipAnchorPosition.Above
+                                        ),
                                         tooltip = { PlainTooltip { Text("保存当前颜色以便后续调用") } },
                                         state = rememberTooltipState()
                                     ) {
@@ -682,7 +698,9 @@ fun PDFCard(
                                     it.toArgbColor()?.let { color ->
                                         if (color.alpha <= 0.1f || color.isCloseTo(other = dialogSurfaceColor)) {
                                             TooltipBox(
-                                                positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                                                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                                    TooltipAnchorPosition.Above
+                                                ),
                                                 tooltip = { PlainTooltip { Text(color.toHexString()) } },
                                                 state = rememberTooltipState(),
                                             ) {
@@ -711,7 +729,9 @@ fun PDFCard(
                                             }
                                         } else {
                                             TooltipBox(
-                                                positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                                                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                                    TooltipAnchorPosition.Above
+                                                ),
                                                 tooltip = { PlainTooltip { Text(color.toHexString()) } },
                                                 state = rememberTooltipState(),
                                             ) {
@@ -1013,13 +1033,13 @@ fun String.toArgbColor(): Color? = runCatching {
 
 fun Color.toHsva(): Hsv {
     val hsv = FloatArray(3)
-    val argb = android.graphics.Color.argb(
+    val argb = AndroidColor.argb(
         (alpha * 255).toInt(),
         (red * 255).toInt(),
         (green * 255).toInt(),
         (blue * 255).toInt()
     )
-    android.graphics.Color.colorToHSV(argb, hsv)
+    AndroidColor.colorToHSV(argb, hsv)
     return Hsv(hsv[0], hsv[1], hsv[2], alpha)
 }
 

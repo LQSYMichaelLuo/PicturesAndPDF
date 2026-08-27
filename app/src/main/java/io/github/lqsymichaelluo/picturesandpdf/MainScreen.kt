@@ -45,8 +45,10 @@ import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.TooltipDefaults.rememberTooltipPositionProvider
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
@@ -76,12 +78,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntRect
-import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.PopupPositionProvider
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -190,23 +187,10 @@ fun MainScreen(
                         val density = LocalDensity.current
                         val context = LocalContext.current
 
-                        val belowPositionProvider = remember(density) {
-                            object : PopupPositionProvider {
-                                override fun calculatePosition(
-                                    anchorBounds: IntRect,
-                                    windowSize: IntSize,
-                                    layoutDirection: LayoutDirection,
-                                    popupContentSize: IntSize
-                                ): IntOffset {
-                                    val x =
-                                        anchorBounds.left + (anchorBounds.width - popupContentSize.width) / 2
-                                    val y = anchorBounds.bottom + with(density) { 1.dp.roundToPx() }
-                                    return IntOffset(x, y)
-                                }
-                            }
-                        }
                         TooltipBox(
-                            positionProvider = belowPositionProvider,
+                            positionProvider = rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Below
+                            ),
                             tooltip = {
                                 PlainTooltip { Text(stringResource(R.string.import_str)) }
                             },
@@ -333,7 +317,9 @@ fun MainScreen(
                             }
                         }
                         TooltipBox(
-                            positionProvider = belowPositionProvider,
+                            positionProvider = rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Below
+                            ),
                             tooltip = {
                                 PlainTooltip { Text(stringResource(R.string.export_str)) }
                             },
@@ -393,7 +379,9 @@ fun MainScreen(
                             }
                         }
                         TooltipBox(
-                            positionProvider = belowPositionProvider,
+                            positionProvider = rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Below
+                            ),
                             tooltip = {
                                 PlainTooltip { Text(stringResource(R.string.settings)) }
                             },
@@ -465,23 +453,10 @@ fun MainScreen(
                         val density = LocalDensity.current
                         val context = LocalContext.current
 
-                        val belowPositionProvider = remember(density) {
-                            object : PopupPositionProvider {
-                                override fun calculatePosition(
-                                    anchorBounds: IntRect,
-                                    windowSize: IntSize,
-                                    layoutDirection: LayoutDirection,
-                                    popupContentSize: IntSize
-                                ): IntOffset {
-                                    val x =
-                                        anchorBounds.left + (anchorBounds.width - popupContentSize.width) / 2
-                                    val y = anchorBounds.bottom + with(density) { 1.dp.roundToPx() }
-                                    return IntOffset(x, y)
-                                }
-                            }
-                        }
                         TooltipBox(
-                            positionProvider = belowPositionProvider,
+                            positionProvider = rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Below
+                            ),
                             tooltip = {
                                 PlainTooltip { Text(stringResource(R.string.import_str)) }
                             },
@@ -608,7 +583,9 @@ fun MainScreen(
                             }
                         }
                         TooltipBox(
-                            positionProvider = belowPositionProvider,
+                            positionProvider = rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Below
+                            ),
                             tooltip = {
                                 PlainTooltip { Text(stringResource(R.string.export_str)) }
                             },
@@ -668,7 +645,9 @@ fun MainScreen(
                             }
                         }
                         TooltipBox(
-                            positionProvider = belowPositionProvider,
+                            positionProvider = rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Below
+                            ),
                             tooltip = {
                                 PlainTooltip { Text(stringResource(R.string.settings)) }
                             },
@@ -785,7 +764,9 @@ fun RowScope.AddItem(
         icon = {
             val tooltipState = rememberTooltipState()
             TooltipBox(
-                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(),
+                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                    TooltipAnchorPosition.Above
+                ),
                 tooltip = {
                     PlainTooltip {
                         Text(text = stringResource(id = screen.title))
@@ -834,7 +815,9 @@ fun ColumnScope.AddRailItem(
         icon = {
             val tooltipState = rememberTooltipState()
             TooltipBox(
-                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(),
+                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                    TooltipAnchorPosition.Above
+                ),
                 tooltip = {
                     PlainTooltip {
                         Text(text = stringResource(id = screen.title))

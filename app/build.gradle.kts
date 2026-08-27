@@ -14,6 +14,7 @@ android {
     defaultConfig {
         applicationId = "io.github.lqsymichaelluo.picturesandpdf"
         minSdk = 29
+        //noinspection OldTargetApi
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
@@ -44,6 +45,7 @@ android {
     buildFeatures {
         compose = true
     }
+    buildToolsVersion = "37.0.0"
 }
 
 dependencies {
@@ -65,8 +67,8 @@ dependencies {
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.compose.material3)
+    implementation(libs.ui)
     testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
@@ -75,7 +77,6 @@ dependencies {
     implementation(project(":shared"))
     implementation (libs.glide)
     implementation(libs.glide.compose)
-    implementation(libs.coil.compose)
     implementation(libs.androidx.browser)
     implementation(libs.reorderable)
 }

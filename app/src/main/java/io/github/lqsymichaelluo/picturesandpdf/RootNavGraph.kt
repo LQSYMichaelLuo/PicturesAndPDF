@@ -15,6 +15,7 @@ const val image_sorting_id = "image_sorting/{pdfName}"
 fun RootNavGraph(
     viewModel: MainViewModel,
     onImportPicture: (String?) -> Unit,
+    onAddPicture: (String?) -> Unit,
     onImportPDF: () -> Unit,
     requestDragAndDropPermission: (DragEvent) -> Unit,
     releaseDragAndDropPermission: () -> Unit,
@@ -71,7 +72,10 @@ fun RootNavGraph(
                                     list = imagePreviewViewModel.imagePreviewList[pdfName]?.bitmapList
                                 )
                             },
-                            imagePreviewViewModel = imagePreviewViewModel
+                            imagePreviewViewModel = imagePreviewViewModel,
+                            onImportPicture = onAddPicture,
+                            requestDragAndDropPermission = requestDragAndDropPermission,
+                            releaseDragAndDropPermission = releaseDragAndDropPermission,
                         )
                     }
                 }

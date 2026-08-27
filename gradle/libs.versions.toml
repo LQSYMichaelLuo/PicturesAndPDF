@@ -1,8 +1,6 @@
 [versions]
 agp = "9.3.1"
 browser = "1.10.0"
-coilCompose = "2.7.0"
-compiler = "4.16.0"
 coreKtx = "1.10.1"
 glide = "5.0.9"
 glideCompose = "1.0.0-beta10"
@@ -31,13 +29,11 @@ runner = "1.5.2"
 core = "1.5.0"
 material3WindowSizeClass = "1.4.0"
 material3Adaptive = "1.0.0-alpha06"
+uiVersion = "1.12.0"
 
 [libraries]
 androidx-browser = { module = "androidx.browser:browser", version.ref = "browser" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
-coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose" }
-compiler = { module = "com.github.bumptech.glide:compiler", version.ref = "glide" }
-compiler-v4160 = { module = "com.github.bumptech.glide:compiler", version.ref = "compiler" }
 glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
 glide-compose = { module = "com.github.bumptech.glide:compose", version.ref = "glideCompose" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
@@ -52,7 +48,6 @@ androidx-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graph
 androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
-androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
 androidx-navigation-runtime-ktx = { group = "androidx.navigation", name = "navigation-runtime-ktx", version.ref = "navigationRuntimeKtx" }
@@ -69,6 +64,7 @@ androidx-core = { group = "androidx.test", name = "core", version.ref = "core" }
 androidx-compose-material3-window-size-class1 = { group = "androidx.compose.material3", name = "material3-window-size-class", version.ref = "material3WindowSizeClass" }
 androidx-compose-material3-adaptive = { group = "androidx.compose.material3", name = "material3-adaptive", version.ref = "material3Adaptive" }
 reorderable = { module = "sh.calvin.reorderable:reorderable", version.ref = "reorderable" }
+ui = { group = "androidx.compose.ui", name = "ui", version.ref = "uiVersion" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

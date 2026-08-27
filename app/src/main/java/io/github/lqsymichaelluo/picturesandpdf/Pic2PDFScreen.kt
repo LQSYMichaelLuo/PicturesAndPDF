@@ -47,6 +47,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberTooltipState
@@ -212,7 +213,9 @@ fun PictureGroupCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 TooltipBox(
-                    positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                    positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                        TooltipAnchorPosition.Above
+                    ),
                     tooltip = { PlainTooltip { Text(PDFName) } },
                     state = rememberTooltipState(),
                 ) {
@@ -227,7 +230,9 @@ fun PictureGroupCard(
                 Row() {
                     val renameTooltipState = rememberTooltipState()
                     TooltipBox(
-                        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                            TooltipAnchorPosition.Above
+                        ),
                         tooltip = { PlainTooltip { Text("更改输出的PDF名") } },
                         state = renameTooltipState
                     ) {
@@ -244,7 +249,9 @@ fun PictureGroupCard(
                     }
                     val deleteTooltipState = rememberTooltipState()
                     TooltipBox(
-                        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                            TooltipAnchorPosition.Above
+                        ),
                         tooltip = { PlainTooltip { Text("删除这个图片组") } },
                         state = deleteTooltipState,
                     ) {
@@ -266,7 +273,9 @@ fun PictureGroupCard(
                     )
                     val expandTooltipState = rememberTooltipState()
                     TooltipBox(
-                        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                            TooltipAnchorPosition.Above
+                        ),
                         tooltip = { PlainTooltip { Text("展开/折叠图片组") } },
                         state = expandTooltipState,
                         modifier = Modifier
