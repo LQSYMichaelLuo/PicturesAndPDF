@@ -407,7 +407,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                             pic = bitmaps,
                             pdf = os as FileOutputStream,
                             callBack = {i, pageCount ->
-                                TODO("$i is index, $pageCount is count")
                             }
                         )
                     }
@@ -438,9 +437,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     pdf = state.file,
                     scale = state.scale,
                     backgroundColor = state.backgroundColor,
-                    callBack = {
-                        i, pageCount ->
-                        TODO("$i is index, $pageCount is count")
+                    callBack = { i, pageCount ->
                     }
                 )
 
