@@ -1,5 +1,5 @@
-'''kotlin
-	App(
-		style = AppStyle.NOBUG
+```kotlin
+	Application.run(
+		contentDescription = Application.NoBug
 	)
-'''
+```
