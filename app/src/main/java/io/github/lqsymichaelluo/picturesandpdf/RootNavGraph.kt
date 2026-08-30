@@ -10,6 +10,7 @@ import io.github.lqsymichaelluo.picturesandpdf.ui.theme.PicturesPDFTheme
 
 const val image_preview_id = "image_preview/{pdfName}/{index}"
 const val image_sorting_id = "image_sorting/{pdfName}"
+const val pdf_preview_id = "pdf_preview/{pdfName}"
 
 @Composable
 fun RootNavGraph(
@@ -19,7 +20,8 @@ fun RootNavGraph(
     onImportPDF: () -> Unit,
     requestDragAndDropPermission: (DragEvent) -> Unit,
     releaseDragAndDropPermission: () -> Unit,
-    imagePreviewViewModel: ImagePreviewViewModel
+    imagePreviewViewModel: ImagePreviewViewModel,
+    pdfPreviewViewModel: PdfPreviewViewModel
 ) {
     val navController = rememberNavController()
     SharedTransitionLayout {
@@ -57,27 +59,37 @@ fun RootNavGraph(
             }
             composable(image_sorting_id) {
                 val pdfName = it.arguments?.getString("pdfName")
-                PicturesPDFTheme {
-                    pdfName?.let {
-                        ImageSortingScreen(
-                            pdfName = pdfName,
-                            onBack = {
-                                navController.popBackStack()
-                                imagePreviewViewModel.setTriggerSort(
-                                    pdfName = pdfName,
-                                    triggered = false
-                                )
-                                viewModel.overridePicturesGroup(
-                                    name = pdfName,
-                                    list = imagePreviewViewModel.imagePreviewList[pdfName]?.bitmapList
-                                )
-                            },
-                            imagePreviewViewModel = imagePreviewViewModel,
-                            onImportPicture = onAddPicture,
-                            requestDragAndDropPermission = requestDragAndDropPermission,
-                            releaseDragAndDropPermission = releaseDragAndDropPermission,
-                        )
-                    }
+                pdfName?.let {
+                    ImageSortingScreen(
+                        pdfName = pdfName,
+                        onBack = {
+                            navController.popBackStack()
+                            imagePreviewViewModel.setTriggerSort(
+                                pdfName = pdfName,
+                                triggered = false
+                            )
+                            viewModel.overridePicturesGroup(
+                                name = pdfName,
+                                list = imagePreviewViewModel.imagePreviewList[pdfName]?.bitmapList
+                            )
+                        },
+                        imagePreviewViewModel = imagePreviewViewModel,
+                        onImportPicture = onAddPicture,
+                        requestDragAndDropPermission = requestDragAndDropPermission,
+                        releaseDragAndDropPermission = releaseDragAndDropPermission,
+                    )
+                }
+            }
+            composable(pdf_preview_id) {
+                val pdfName = it.arguments?.getString("pdfName")
+                pdfName?.let { name ->
+                    PDFPreviewScreen(
+                        pdfName = name,
+                        pdfPreviewViewModel = pdfPreviewViewModel,
+                        onBack = {
+                            navController.popBackStack()
+                        },
+                    )
                 }
             }
         }

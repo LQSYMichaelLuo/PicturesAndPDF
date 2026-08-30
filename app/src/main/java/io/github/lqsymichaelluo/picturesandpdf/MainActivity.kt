@@ -15,6 +15,7 @@ import io.github.lqsymichaelluo.shared.PlatformType
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels()
     private val imagePreviewViewModel: ImagePreviewViewModel by viewModels()
+    private val pdfPreviewViewModel: PdfPreviewViewModel by viewModels()
     private val pickImageLauncher =
         registerForActivityResult(ActivityResultContracts.GetMultipleContents()) {
             viewModel.importPictures(this, it, viewModel.currentOutputPDFName)
@@ -63,6 +64,7 @@ class MainActivity : ComponentActivity() {
                 RootNavGraph(
                     viewModel = viewModel,
                     imagePreviewViewModel = imagePreviewViewModel,
+                    pdfPreviewViewModel = pdfPreviewViewModel,
                     onImportPicture = { importPicture(it) },
                     onAddPicture = { addPicture(it) },
                     onImportPDF = { importPDF() },

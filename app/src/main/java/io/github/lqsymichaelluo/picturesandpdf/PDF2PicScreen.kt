@@ -71,12 +71,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import android.graphics.Color as AndroidColor
 
 @Composable
 fun PDF2PicScreen(
     viewModel: MainViewModel,
-    isPhoneLandscape: Boolean
+    isPhoneLandscape: Boolean,
+    rootNavController: NavController
 ) {
     val debuggable by AppFlags.debuggable
     Box(
@@ -109,7 +111,7 @@ fun PDF2PicScreen(
         LazyVerticalStaggeredGrid(
             modifier = Modifier.fillMaxSize(),
             columns = if (isPhoneLandscape) StaggeredGridCells.Fixed(2)
-                else StaggeredGridCells.Adaptive(minSize = 540.dp),
+            else StaggeredGridCells.Adaptive(minSize = 540.dp),
             contentPadding = PaddingValues(8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalItemSpacing = 8.dp
@@ -119,7 +121,8 @@ fun PDF2PicScreen(
                     PDFCard(
                         viewModel = viewModel,
                         pdfName = pdfName,
-                        modifier = Modifier.animateItem()
+                        modifier = Modifier.animateItem(),
+                        rootNavController = rootNavController
                     )
                 }
             }
@@ -140,7 +143,8 @@ fun PDF2PicScreen(
 fun PDFCard(
     viewModel: MainViewModel,
     pdfName: String,
-    modifier: Modifier
+    modifier: Modifier,
+    rootNavController: NavController
 ) {
     val state = viewModel.pdfInputList[pdfName] ?: return
 
@@ -167,7 +171,7 @@ fun PDFCard(
         targetValue = if (operateMode == OperateMode.SCALE) MaterialTheme.colorScheme.primary else Color.Transparent
     )
     val contentColor by animateColorAsState(
-        targetValue = if (operateMode == OperateMode.SCALE) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.onSurface
+        targetValue = if (operateMode == OperateMode.SCALE) MaterialTheme.colorScheme.onPrimary else CardDefaults.cardColors().contentColor
     )
 
     fun toggleMode(target: OperateMode) {
@@ -190,7 +194,18 @@ fun PDFCard(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(
+                            RoundedCornerShape(8.dp)
+                        )
+                        .combinedClickable(
+                            onClick = {
+                                rootNavController.navigate(
+                                    "pdf_preview/$pdfName"
+                                )
+                            }
+                        )
                 ) {
                     Image(
                         painter = painterResource(R.drawable.ic_pdf),

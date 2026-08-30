@@ -83,7 +83,8 @@ fun BottomNavGraph(
             ) {
                 PDF2PicScreen(
                     viewModel = viewModel,
-                    isPhoneLandscape = isPhoneLandscape
+                    isPhoneLandscape = isPhoneLandscape,
+                    rootNavController = rootNavController,
                 )
             }
         }
@@ -160,7 +161,8 @@ fun SideNavGraph(
             ) {
                 PDF2PicScreen(
                     viewModel = viewModel,
-                    isPhoneLandscape = isPhoneLandscape
+                    isPhoneLandscape = isPhoneLandscape,
+                    rootNavController = rootNavController,
                 )
             }
         }

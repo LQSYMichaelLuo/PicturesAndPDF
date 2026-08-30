@@ -16,7 +16,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults.rememberTooltipPositionProvider
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTooltipState
@@ -40,13 +42,8 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastCoerceIn
-import androidx.compose.ui.window.PopupPositionProvider
 import androidx.navigation.NavController
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
@@ -68,21 +65,6 @@ fun ImagePreviewScreen(
     val density = LocalDensity.current
     val imageID = "image_$currentIndex"
     var colorState by imagePreviewViewModel.imagePreviewBackgroundColorState(imageID)
-    val belowPositionProvider = remember(density) {
-        object : PopupPositionProvider {
-            override fun calculatePosition(
-                anchorBounds: IntRect,
-                windowSize: IntSize,
-                layoutDirection: LayoutDirection,
-                popupContentSize: IntSize
-            ): IntOffset {
-                val x =
-                    anchorBounds.left + (anchorBounds.width - popupContentSize.width) / 2
-                val y = anchorBounds.bottom + with(density) { 1.dp.roundToPx() }
-                return IntOffset(x, y)
-            }
-        }
-    }
     val containerColor by animateColorAsState(
         targetValue = when (colorState) {
             ImagePreviewBackgroundColorState.Gray -> Color.Gray
@@ -105,7 +87,9 @@ fun ImagePreviewScreen(
                 title = { Text("图片预览", color = Color.White) },
                 navigationIcon = {
                     TooltipBox(
-                        positionProvider = belowPositionProvider,
+                        positionProvider = rememberTooltipPositionProvider(
+                            TooltipAnchorPosition.Below
+                        ),
                         tooltip = {
                             PlainTooltip { Text(stringResource(R.string.back)) }
                         },
@@ -122,7 +106,9 @@ fun ImagePreviewScreen(
                 },
                 actions = {
                     TooltipBox(
-                        positionProvider = belowPositionProvider,
+                        positionProvider = rememberTooltipPositionProvider(
+                            TooltipAnchorPosition.Below
+                        ),
                         tooltip = {
                             PlainTooltip { Text("给图片组排序") }
                         },
@@ -148,7 +134,9 @@ fun ImagePreviewScreen(
                         }
                     }
                     TooltipBox(
-                        positionProvider = belowPositionProvider,
+                        positionProvider = rememberTooltipPositionProvider(
+                            TooltipAnchorPosition.Below
+                        ),
                         tooltip = {
                             PlainTooltip { Text("转换底色") }
                         },
