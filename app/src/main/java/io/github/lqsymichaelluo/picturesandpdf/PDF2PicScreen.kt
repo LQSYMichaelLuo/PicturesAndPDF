@@ -1,5 +1,6 @@
 package io.github.lqsymichaelluo.picturesandpdf
 
+import android.os.Build
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -16,6 +17,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -27,6 +29,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AlertDialogDefaults
@@ -34,6 +37,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -72,6 +77,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import kotlin.math.roundToInt
 import android.graphics.Color as AndroidColor
 
 @Composable
@@ -635,7 +641,7 @@ fun PDFCard(
                                 )
                             ) {
                                 Text(
-                                    text = "尺寸",
+                                    text = "缩放",
                                     modifier = Modifier.padding(end = 16.dp),
                                     fontWeight = FontWeight.Bold
                                 )
@@ -668,6 +674,96 @@ fun PDFCard(
                                             Text(label)
                                         }
                                     }
+                                }
+                            }
+                            Spacer(
+                                modifier = Modifier.height(8.dp)
+                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(
+                                    start = 12.dp,
+                                    end = 12.dp
+                                )
+                            ) {
+                                Text(
+                                    text = "格式",
+                                    modifier = Modifier.padding(end = 16.dp),
+                                    fontWeight = FontWeight.Bold
+                                )
+                                val options = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                                    listOf("PNG", "JPEG", "WEBP_LOSSY", "WEBP_LOSSLESS")
+                                } else {
+                                    listOf("PNG", "JPEG", "WEBP")
+                                }
+                                FlowRow(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                                    verticalArrangement = Arrangement.spacedBy(0.dp),
+                                ) {
+                                    options.forEachIndexed { index, label ->
+                                        val selected =
+                                            index == viewModel.pdfInputList[pdfName]?.format
+                                        FilterChip(
+                                            selected = selected,
+                                            modifier = Modifier,
+                                            onClick = {
+                                                viewModel.setFormatMode(pdfName, index)
+                                                if (index != 0) viewModel.setAlignMode(pdfName, 0)
+                                            },
+                                            label = { Text(label) },
+                                            shape = if (selected){
+                                                CircleShape
+                                            } else {
+                                                RoundedCornerShape(8.dp)
+                                            },
+                                            colors = FilterChipDefaults.filterChipColors(
+                                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                                labelColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                            ),
+                                            leadingIcon = if (selected) {
+                                                {
+                                                    Icon(
+                                                        painter = painterResource(R.drawable.ic_check),
+                                                        contentDescription = null,
+                                                        modifier = Modifier.size(FilterChipDefaults.IconSize),
+                                                        tint = MaterialTheme.colorScheme.onPrimary
+                                                    )
+                                                }
+                                            } else null,
+                                        )
+                                    }
+                                }
+                            }
+                            Spacer(
+                                modifier = Modifier.height(8.dp)
+                            )
+                            AnimatedVisibility(
+                                visible = state.format != 0
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(
+                                        start = 12.dp,
+                                        end = 12.dp
+                                    )
+                                ) {
+                                    Text(
+                                        text = "质量",
+                                        modifier = Modifier.padding(end = 16.dp),
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Slider(
+                                        value = state.quality.toFloat(),
+                                        onValueChange = {
+                                            viewModel.setQuality(pdfName, it.roundToInt())
+                                        },
+                                        valueRange = 0f..100f,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    Text("  ${state.quality}")
                                 }
                             }
                             Spacer(

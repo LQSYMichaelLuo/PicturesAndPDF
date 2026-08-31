@@ -11,5 +11,7 @@ data class PicturesOutputState(
     val toMultiplePictures: Boolean = true,
     val alignMode: Int = 0,
     val stretchMode: Int = 0,
-    val file: File
+    val file: File,
+    val format: Int = 0,
+    val quality: Int = 100
 )

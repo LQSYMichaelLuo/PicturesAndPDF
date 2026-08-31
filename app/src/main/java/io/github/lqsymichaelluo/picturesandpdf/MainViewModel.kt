@@ -10,6 +10,7 @@ import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Rect
 import android.net.Uri
+import android.os.Build
 import android.provider.MediaStore
 import android.widget.Toast
 import androidx.compose.runtime.MutableState
@@ -153,6 +154,18 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun setStretchMode(name: String, stretchMode: Int) {
         pdfInputList[name] = pdfInputList[name]?.copy(
             stretchMode = stretchMode
+        ) as PicturesOutputState
+    }
+
+    fun setFormatMode(name: String, formatMode: Int) {
+        pdfInputList[name] = pdfInputList[name]?.copy(
+            format = formatMode
+        ) as PicturesOutputState
+    }
+
+    fun setQuality(name: String, quality: Int) {
+        pdfInputList[name] = pdfInputList[name]?.copy(
+            quality = quality
         ) as PicturesOutputState
     }
 
@@ -423,8 +436,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-
-    fun exportPdfToPic(context: Context) {
+    fun exportPdfToPic(
+        context: Context
+    ) {
         viewModelScope.launch(Dispatchers.IO) {
             _isExporting.value = true
             _showDialog.value = true
@@ -433,6 +447,27 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             val resolver = context.contentResolver
 
             pdfInputList.forEach { (pdfName, state) ->
+
+                val format = when (state.format) {
+                    1 -> Bitmap.CompressFormat.JPEG
+                    2 -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        Bitmap.CompressFormat.WEBP_LOSSY
+                    } else {
+                        Bitmap.CompressFormat.WEBP
+                    }
+                    3 -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        Bitmap.CompressFormat.WEBP_LOSSLESS
+                    } else {
+                        Bitmap.CompressFormat.WEBP
+                    }
+                    else -> Bitmap.CompressFormat.PNG
+                }
+
+                val suffix = when (state.format) {
+                    0 -> ".png"
+                    1 -> ".jpg"
+                    else -> ".webp"
+                }
 
                 val rawBitmaps = Convertor().PDFtoPicturesForApp(
                     pdf = state.file,
@@ -447,7 +482,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         saveBitmap(
                             resolver,
                             bmp,
-                            "${pdfName.dropLast(4)}/page_${i + 1}.png"
+                            "${pdfName.dropLast(4)}/page_${i + 1}${suffix}",
+                            format,
+                            state.quality
                         )
                     }
                     return@forEach
@@ -504,7 +541,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 saveBitmap(
                     resolver,
                     longBmp,
-                    "${pdfName.dropLast(4)}/longpage.png"
+                    "${pdfName.dropLast(4)}/longpage${suffix}",
+                    format,
+                    state.quality
                 )
 
                 longBmp.recycle()
@@ -520,14 +559,16 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private fun saveBitmap(
         resolver: ContentResolver,
         bitmap: Bitmap,
-        path: String
+        path: String,
+        format: Bitmap.CompressFormat,
+        quality: Int
     ) {
         val dir = path.substringBeforeLast("/")
         val name = path.substringAfterLast("/")
 
         val values = ContentValues().apply {
             put(MediaStore.Downloads.DISPLAY_NAME, name)
-            put(MediaStore.Downloads.MIME_TYPE, "image/png")
+            put(MediaStore.Downloads.MIME_TYPE, "image/*")
             put(MediaStore.Downloads.RELATIVE_PATH, "Download/PDF2Pic/$dir")
             put(MediaStore.Downloads.IS_PENDING, 1)
         }
@@ -539,7 +580,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
         uri?.let {
             resolver.openOutputStream(it)?.use { os ->
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, os)
+                bitmap.compress(format, quality, os)
             }
             values.clear()
             values.put(MediaStore.Downloads.IS_PENDING, 0)

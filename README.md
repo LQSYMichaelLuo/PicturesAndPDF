@@ -1,5 +1,5 @@
 ```kotlin
-	Application.run(
-		contentDescription = Application.NoBug
-	)
+Application.run(
+	contentDescription = Application.NoBug
+)
 ```

@@ -15,6 +15,7 @@ import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults.rememberTooltipPositionProvider
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -23,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -44,6 +46,8 @@ fun PDFPreviewScreen(
     }
     if (!fileExists) return
 
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+
     var colorState by pdfPreviewViewModel.pdfPreviewBackgroundColorState(pdfName)
     val containerColor by animateColorAsState(
         targetValue = when (colorState) {
@@ -62,6 +66,9 @@ fun PDFPreviewScreen(
 
     Scaffold(
         containerColor = containerColor,
+        modifier = Modifier.nestedScroll(
+            scrollBehavior.nestedScrollConnection
+        ),
         topBar = {
             TopAppBar(
                 title = {
@@ -70,6 +77,7 @@ fun PDFPreviewScreen(
                         modifier = Modifier.basicMarquee()
                     )
                 },
+                scrollBehavior = scrollBehavior,
                 navigationIcon = {
                     TooltipBox(
                         positionProvider = rememberTooltipPositionProvider(
