@@ -49,6 +49,7 @@ class ImagePreviewViewModel : ViewModel() {
             }
             is Bitmap -> {
                 list.remove(index)
+                ThumbnailCache.removeAllFor(index)
                 index.recycle()
             }
             else -> {

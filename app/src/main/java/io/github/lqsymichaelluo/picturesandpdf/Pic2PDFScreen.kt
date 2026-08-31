@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -30,14 +31,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridState
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -53,6 +57,7 @@ import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -67,6 +72,7 @@ import androidx.compose.ui.draganddrop.mimeTypes
 import androidx.compose.ui.draganddrop.toAndroidDragEvent
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -76,12 +82,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
-import com.bumptech.glide.integration.compose.GlideImage
-import com.bumptech.glide.integration.compose.placeholder
-import com.bumptech.glide.load.engine.DiskCacheStrategy
 import kotlin.math.roundToInt
-
 
 @Composable
 fun Pic2PDFScreen(
@@ -93,9 +94,14 @@ fun Pic2PDFScreen(
     requestDragAndDropPermission: (DragEvent) -> Unit,
     releaseDragAndDropPermission: () -> Unit
 ) {
-    val context = LocalContext.current
     val debuggable by AppFlags.debuggable
-    var receivingPictures by remember { mutableStateOf(false) }
+
+    val gridState = rememberLazyStaggeredGridState()
+
+    DisposableEffect(Unit) {
+        onDispose { ThumbnailCache.trimToHalf() }
+    }
+
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
@@ -126,13 +132,13 @@ fun Pic2PDFScreen(
         LazyVerticalStaggeredGrid(
             modifier = Modifier.fillMaxSize(),
             columns = StaggeredGridCells.Adaptive(minSize = 338.dp),
+            state = gridState,
             contentPadding = PaddingValues(8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalItemSpacing = 8.dp
         ) {
             for ((pdfName, bitmaps) in viewModel.pictureInputList) {
                 item(key = pdfName) {
-                    var newName = ""
                     PictureGroupCard(
                         PDFName = pdfName,
                         bitmapList = bitmaps,
@@ -140,8 +146,9 @@ fun Pic2PDFScreen(
                         imagePreviewViewModel = imagePreviewViewModel,
                         modifier = Modifier.animateItem(),
                         rootNavController = rootNavController,
-                        onPDFNameChange = { pdfName, newName ->
-                            viewModel.changeOutputPDFName(pdfName, newName + ".pdf")
+                        gridState = gridState,
+                        onPDFNameChange = { oldName, newName ->
+                            viewModel.changeOutputPDFName(oldName, newName + ".pdf")
                         },
                         onImportPicture = onImportPicture,
                         requestDragAndDropPermission = requestDragAndDropPermission,
@@ -162,8 +169,7 @@ fun Pic2PDFScreen(
     }
 }
 
-
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalGlideComposeApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PictureGroupCard(
     PDFName: String,
@@ -171,6 +177,7 @@ fun PictureGroupCard(
     viewModel: MainViewModel,
     imagePreviewViewModel: ImagePreviewViewModel,
     modifier: Modifier,
+    gridState: LazyStaggeredGridState,
     onPDFNameChange: (oldName: String, newName: String) -> String,
     onImportPicture: (String?) -> Unit,
     requestDragAndDropPermission: (DragEvent) -> Unit,
@@ -181,7 +188,6 @@ fun PictureGroupCard(
     val foldStatus by viewModel.foldState(PDFName)
     val rotation by viewModel.rotationState(PDFName)
     var isError by remember { mutableStateOf(false) }
-    var selectedBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var isChangeNameDialogShow by viewModel.changeNameDialogShowState(PDFName)
     var isDeleteDialogShow by viewModel.deletePicturesDialogShowState(PDFName)
     var newPDFName by viewModel.newNameState(PDFName)
@@ -227,7 +233,7 @@ fun PictureGroupCard(
                             .weight(1f)
                     )
                 }
-                Row() {
+                Row {
                     val renameTooltipState = rememberTooltipState()
                     TooltipBox(
                         positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
@@ -333,7 +339,7 @@ fun PictureGroupCard(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         bitmapList.forEachIndexed { index, bitmap ->
-                            val code = bitmap.hashCode()
+                            val code = System.identityHashCode(bitmap)
                             var deletePictureButtonShow by viewModel.deletePictureButtonShowState(
                                 code
                             )
@@ -341,39 +347,47 @@ fun PictureGroupCard(
                                 Box(
                                     modifier = Modifier.size(itemWidth)
                                 ) {
-                                    GlideImage(
-                                        model = bitmap,
-                                        contentDescription = null,
-                                        contentScale = ContentScale.Crop,
-                                        loading = placeholder(R.drawable.ic_pdf2pic),
-                                        failure = placeholder(R.drawable.ic_error),
-                                        modifier = thumbModifier.combinedClickable(
-                                            onClick = {
-                                                selectedBitmap = bitmap
-                                                val imagePreviewData = ImagePreviewData(
-                                                    bitmapList = bitmapList.toMutableStateList()
-                                                )
-                                                imagePreviewViewModel.addImagePreviewList(
-                                                    pdfName = "$newPDFNameTitle.pdf",
-                                                    imagePreviewData = imagePreviewData
-                                                )
-                                                rootNavController.navigate("image_preview/$newPDFNameTitle.pdf/$index")
-                                            },
-                                            onLongClick = {
-                                                deletePictureButtonShow = !deletePictureButtonShow
-                                            }
+                                    val thumbnail = rememberLazyThumbnail(
+                                        source = bitmap,
+                                        targetPx = itemWidthPx,
+                                        gridState = gridState
+                                    )
+                                    val imageBitmap =
+                                        remember(thumbnail) { thumbnail?.asImageBitmap() }
+
+                                    val clickModifier = thumbModifier.combinedClickable(
+                                        onClick = {
+                                            val imagePreviewData = ImagePreviewData(
+                                                bitmapList = bitmapList.toMutableStateList()
+                                            )
+                                            imagePreviewViewModel.addImagePreviewList(
+                                                pdfName = "$newPDFNameTitle.pdf",
+                                                imagePreviewData = imagePreviewData
+                                            )
+                                            rootNavController.navigate("image_preview/$newPDFNameTitle.pdf/$index")
+                                        },
+                                        onLongClick = {
+                                            deletePictureButtonShow = !deletePictureButtonShow
+                                        }
+                                    )
+
+                                    if (imageBitmap != null) {
+                                        Image(
+                                            bitmap = imageBitmap,
+                                            contentDescription = null,
+                                            contentScale = ContentScale.Crop,
+                                            modifier = clickModifier
                                         )
-                                    ) { requestBuilder ->
-                                        requestBuilder
-                                            .override(itemWidthPx, itemWidthPx)
-                                            .centerCrop()
-                                            .diskCacheStrategy(DiskCacheStrategy.ALL)
+                                    } else {
+                                        CircularProgressIndicator()
                                     }
 
                                     CompositionLocalProvider(
                                         LocalMinimumInteractiveComponentSize provides 4.dp
                                     ) {
-                                        if (bitmapList.size <= 1) { deletePictureButtonShow = false }
+                                        if (bitmapList.size <= 1) {
+                                            deletePictureButtonShow = false
+                                        }
                                         androidx.compose.animation.AnimatedVisibility(
                                             modifier = Modifier.align(Alignment.TopEnd),
                                             visible = deletePictureButtonShow && !(bitmapList.size == 1 && index == 0),
@@ -388,11 +402,12 @@ fun PictureGroupCard(
                                         ) {
                                             IconButton(
                                                 modifier = Modifier
-                                                    //.align(Alignment.TopEnd)
                                                     .padding(1.5.dp)
                                                     .size(24.dp)
                                                     .background(
-                                                        color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.45f),
+                                                        color = MaterialTheme.colorScheme.surfaceContainer.copy(
+                                                            alpha = 0.45f
+                                                        ),
                                                         shape = CircleShape
                                                     ),
                                                 onClick = {
@@ -427,8 +442,7 @@ fun PictureGroupCard(
                                     },
                                     target = remember {
                                         object : DragAndDropTarget {
-                                            override fun onStarted(event: DragAndDropEvent) {
-                                            }
+                                            override fun onStarted(event: DragAndDropEvent) {}
 
                                             override fun onEntered(event: DragAndDropEvent) {
                                                 val press = PressInteraction.Press(Offset.Zero)
@@ -589,5 +603,3 @@ fun PictureGroupCard(
         }
     }
 }
-
-

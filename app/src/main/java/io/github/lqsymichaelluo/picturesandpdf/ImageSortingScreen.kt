@@ -13,6 +13,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -24,6 +25,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -38,6 +40,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -54,6 +57,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
@@ -70,22 +74,20 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
-import com.bumptech.glide.integration.compose.GlideImage
-import com.bumptech.glide.integration.compose.placeholder
-import com.bumptech.glide.load.engine.DiskCacheStrategy
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyGridState
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalGlideComposeApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ImageSortingScreen(
     pdfName: String = "unknown.pdf",
@@ -95,12 +97,14 @@ fun ImageSortingScreen(
     releaseDragAndDropPermission: () -> Unit,
     imagePreviewViewModel: ImagePreviewViewModel
 ) {
-    BackHandler {
-        onBack()
-    }
+    BackHandler(
+        enabled = true,
+        onBack = onBack
+    )
     val context = LocalContext.current
     var scale by remember { mutableFloatStateOf(1f) }
     val hapticFeedback = LocalHapticFeedback.current
+    val density = LocalDensity.current
 
     var receivingDrag by remember { mutableStateOf(false) }
 
@@ -120,6 +124,10 @@ fun ImageSortingScreen(
     )
     val importButtonInteractionSource = remember { MutableInteractionSource() }
     val dragPress = remember { mutableStateOf<PressInteraction.Press?>(null) }
+
+    DisposableEffect(Unit) {
+        onDispose { ThumbnailCache.trimToHalf() }
+    }
 
     Scaffold(
         topBar = {
@@ -311,55 +319,67 @@ fun ImageSortingScreen(
                                 if (isDragging) 0.dp else 0.5.dp
                             )
 
-                            val overrideSize = (200 * scale).toInt().coerceIn(100, 800)
+                            val overrideSizePx = with(density) {
+                                (200.dp * scale).roundToPx().coerceIn(100, 800)
+                            }
                             val code = System.identityHashCode(list[index])
                             var deletePictureButtonShow by imagePreviewViewModel.deletePictureButtonShowState(
                                 code
                             )
+
+                            val thumbnail = rememberLazyThumbnail(
+                                source = list[index],
+                                targetPx = overrideSizePx,
+                                gridState = gridState
+                            )
+                            val imageBitmap = remember(thumbnail) { thumbnail?.asImageBitmap() }
+
                             key(code) {
                                 Box(
                                     modifier = Modifier.fillMaxSize()
                                 ) {
-                                    GlideImage(
-                                        model = list[index],
-                                        contentDescription = null,
-                                        contentScale = ContentScale.Crop,
-                                        loading = placeholder(R.drawable.ic_pdf2pic),
-                                        failure = placeholder(R.drawable.ic_error),
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(3.dp)
-                                            .shadow(
-                                                elevation = elevation,
-                                                shape = RoundedCornerShape(8.dp)
-                                            )
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .border(
-                                                width = borderStrokeWidth,
-                                                color = MaterialTheme.colorScheme.onSurface,
-                                                shape = RoundedCornerShape(8.dp)
-                                            )
-                                            .longPressDraggableHandle(
-                                                onDragStarted = {
-                                                    hapticFeedback.performHapticFeedback(
-                                                        HapticFeedbackType.LongPress
-                                                    )
-                                                }
-                                            )
-                                            .clickable(
-                                                interactionSource = null,
-                                                indication = null,
-                                            ) {
-                                                deletePictureButtonShow =
-                                                    !deletePictureButtonShow
+                                    val shape = RoundedCornerShape(8.dp)
+                                    val cardModifier = Modifier
+                                        .fillMaxWidth()
+                                        .aspectRatio(1f)
+                                        .padding(3.dp)
+                                        .shadow(
+                                            elevation = elevation,
+                                            shape = shape
+                                        )
+                                        .clip(shape)
+                                        .border(
+                                            width = borderStrokeWidth,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            shape = shape
+                                        )
+                                        .longPressDraggableHandle(
+                                            onDragStarted = {
+                                                hapticFeedback.performHapticFeedback(
+                                                    HapticFeedbackType.LongPress
+                                                )
                                             }
-                                            .animateItem()
-                                    ) { requestBuilder ->
-                                        requestBuilder
-                                            .override(overrideSize, overrideSize)
-                                            .centerCrop()
-                                            .diskCacheStrategy(DiskCacheStrategy.ALL)
+                                        )
+                                        .clickable(
+                                            interactionSource = null,
+                                            indication = null,
+                                        ) {
+                                            deletePictureButtonShow =
+                                                !deletePictureButtonShow
+                                        }
+                                        .animateItem()
+
+                                    if (imageBitmap != null) {
+                                        Image(
+                                            bitmap = imageBitmap,
+                                            contentDescription = null,
+                                            contentScale = ContentScale.Crop,
+                                            modifier = cardModifier
+                                        )
+                                    } else {
+                                        CircularProgressIndicator()
                                     }
+
                                     CompositionLocalProvider(
                                         LocalMinimumInteractiveComponentSize provides 4.dp
                                     ) {

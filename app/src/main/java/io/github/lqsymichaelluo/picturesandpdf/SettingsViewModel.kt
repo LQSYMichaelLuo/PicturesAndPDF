@@ -4,7 +4,6 @@ import android.app.Application
 import android.content.Context
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
-import com.bumptech.glide.Glide
 
 
 class SettingsViewModel(app: Application) : AndroidViewModel(application = app) {
@@ -38,8 +37,5 @@ class SettingsViewModel(app: Application) : AndroidViewModel(application = app) 
                     //print(file.name)
                 }
             }
-        Thread {
-            Glide.get(context).clearDiskCache()
-        }.start()
     }
 }

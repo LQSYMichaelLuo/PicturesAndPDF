@@ -75,8 +75,6 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation(libs.gson)
     implementation(project(":shared"))
-    implementation (libs.glide)
-    implementation(libs.glide.compose)
     implementation(libs.androidx.browser)
     implementation(libs.reorderable)
 }

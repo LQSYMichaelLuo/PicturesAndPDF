@@ -192,6 +192,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             }
             is Bitmap -> {
                 list?.remove(index)
+                ThumbnailCache.removeAllFor(index)
                 index.recycle()
             }
             else -> {

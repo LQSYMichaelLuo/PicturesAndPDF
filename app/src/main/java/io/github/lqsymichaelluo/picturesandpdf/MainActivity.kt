@@ -8,7 +8,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import com.bumptech.glide.Glide
 import io.github.lqsymichaelluo.picturesandpdf.ui.theme.PicturesPDFTheme
 import io.github.lqsymichaelluo.shared.PlatformType
 
@@ -55,9 +54,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        Thread {
-            Glide.get(this).clearDiskCache()
-        }.start()
         setContent {
             PicturesPDFTheme {
                 //val navController = rememberNavController()
