@@ -1,7 +1,6 @@
 package io.github.lqsymichaelluo.picturesandpdf
 
 import android.view.DragEvent
-import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
@@ -95,12 +94,21 @@ fun ImageSortingScreen(
     onImportPicture: (String?) -> Unit,
     requestDragAndDropPermission: (DragEvent) -> Unit,
     releaseDragAndDropPermission: () -> Unit,
-    imagePreviewViewModel: ImagePreviewViewModel
+    imagePreviewViewModel: ImagePreviewViewModel,
+    viewModel: MainViewModel
 ) {
-    BackHandler(
-        enabled = true,
-        onBack = onBack
-    )
+    DisposableEffect(Unit) {
+        onDispose {
+            imagePreviewViewModel.setTriggerSort(
+                pdfName = pdfName,
+                triggered = false
+            )
+            viewModel.overridePicturesGroup(
+                name = pdfName,
+                list = imagePreviewViewModel.imagePreviewList[pdfName]?.bitmapList
+            )
+        }
+    }
     val context = LocalContext.current
     var scale by remember { mutableFloatStateOf(1f) }
     val hapticFeedback = LocalHapticFeedback.current

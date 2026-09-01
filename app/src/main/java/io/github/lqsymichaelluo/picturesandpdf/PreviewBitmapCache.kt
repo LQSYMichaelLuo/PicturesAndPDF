@@ -52,6 +52,12 @@ object PreviewBitmapCache {
 
     fun removeAllFor(bmp: Bitmap) { cache.remove(keyOf(bmp)) }
 
+    fun removeAll(sources: Collection<Bitmap>) {
+        for (src in sources) {
+            cache.remove(System.identityHashCode(src).toLong() and 0xFFFFFFFFL)
+        }
+    }
+
     fun trimToHalf() { cache.trimToSize(cache.maxSize() / 2) }
 
     fun clear() { cache.evictAll() }

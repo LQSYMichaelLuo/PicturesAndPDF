@@ -52,6 +52,11 @@ fun RootNavGraph(
                         imagePreviewViewModel = imagePreviewViewModel,
                         onBack = {
                             navController.popBackStack()
+                            imagePreviewViewModel.imagePreviewList[pdfName]
+                                ?.bitmapList
+                                ?.let { previewList ->
+                                    PreviewBitmapCache.removeAll(previewList)
+                                }
                         },
                         navController = navController
                     )
@@ -74,6 +79,7 @@ fun RootNavGraph(
                             )
                         },
                         imagePreviewViewModel = imagePreviewViewModel,
+                        viewModel = viewModel,
                         onImportPicture = onAddPicture,
                         requestDragAndDropPermission = requestDragAndDropPermission,
                         releaseDragAndDropPermission = releaseDragAndDropPermission,

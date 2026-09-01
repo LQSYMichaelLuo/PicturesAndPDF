@@ -9,7 +9,7 @@ object ThumbnailCache {
     private val maxSizeKb: Int =
         ((Runtime.getRuntime().maxMemory() / 1024L) / 8L)
             .toInt()
-            .coerceAtLeast(8 * 1024) // 兜底 8MB
+            .coerceAtLeast(8 * 1024)
 
     private val cache = object : LruCache<Long, Bitmap>(maxSizeKb) {
         override fun sizeOf(key: Long, value: Bitmap): Int =
@@ -39,7 +39,9 @@ object ThumbnailCache {
     fun put(key: Long, bitmap: Bitmap) {
         cache.put(key, bitmap)
     }
-
+    fun removeAll(sources: Collection<Bitmap>) {
+        for (src in sources) removeAllFor(src)
+    }
     fun removeAllFor(source: Bitmap) {
         val id = System.identityHashCode(source).toLong() and 0xFFFFFFFFL
         for (i in BUCKETS.indices) {

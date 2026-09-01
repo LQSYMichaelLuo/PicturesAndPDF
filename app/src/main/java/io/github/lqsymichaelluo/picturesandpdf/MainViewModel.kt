@@ -366,6 +366,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
 
     fun deletePicturesGroup(pdfName: String) {
+        val list = pictureInputList[pdfName] ?: return
+        ThumbnailCache.removeAll(list)
+        PreviewBitmapCache.removeAll(list)
         pictureInputList.remove(pdfName)
     }
 
