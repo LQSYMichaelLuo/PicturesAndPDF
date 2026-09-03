@@ -2,6 +2,7 @@ package io.github.lqsymichaelluo.picturesandpdf
 
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
+import android.os.VibrationEffect
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.Image
@@ -47,11 +48,13 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.util.fastCoerceIn
 import androidx.navigation.NavController
+import androidx.wear.compose.material3.MaterialTheme
 import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
 
@@ -65,6 +68,7 @@ fun ImagePreviewScreen(
     imagePreviewViewModel: ImagePreviewViewModel,
     navController: NavController
 ) {
+    val context = LocalContext.current
     val imageID = "image_$currentIndex"
     var colorState by imagePreviewViewModel.imagePreviewBackgroundColorState(imageID)
     val containerColor by animateColorAsState(
@@ -102,7 +106,10 @@ fun ImagePreviewScreen(
                         },
                         state = rememberTooltipState()
                     ) {
-                        IconButton(onClick = onBack) {
+                        IconButton(onClick = {
+                            HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
+                            onBack()
+                        }) {
                             Icon(
                                 painter = painterResource(R.drawable.ic_arrow_back),
                                 contentDescription = null,
@@ -123,6 +130,7 @@ fun ImagePreviewScreen(
                     ) {
                         IconButton(
                             onClick = {
+                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
                                 imagePreviewViewModel.setTriggerSort(
                                     pdfName = pdfName,
                                     triggered = true
@@ -136,7 +144,8 @@ fun ImagePreviewScreen(
                         ) {
                             Icon(
                                 painter = painterResource(R.drawable.ic_sort),
-                                contentDescription = null
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }
@@ -149,10 +158,14 @@ fun ImagePreviewScreen(
                         },
                         state = rememberTooltipState()
                     ) {
-                        IconButton(onClick = { toggleColorState() }) {
+                        IconButton(onClick = {
+                            HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
+                            toggleColorState()
+                        }) {
                             Icon(
                                 painter = painterResource(R.drawable.ic_change),
-                                contentDescription = null
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }
@@ -186,6 +199,7 @@ fun ImagePreviewScreen(
                         source = bitmapList[page],
                         modifier = Modifier.fillMaxSize(),
                         onScaleChanged = { newScale ->
+                            HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
                             if (page == pagerState.currentPage) {
                                 currentPageScale = newScale
                             }
@@ -245,6 +259,7 @@ fun PreviewPage(
     onScaleChanged: (Float) -> Unit = {},
     onPinchClosed: () -> Unit = {}
 ) {
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val scale = remember { Animatable(1f) }
     var offsetX by remember { mutableFloatStateOf(0f) }
@@ -347,6 +362,7 @@ fun PreviewPage(
             .pointerInput(Unit) {
                 detectTapGestures(
                     onDoubleTap = {
+                        HapticManager.vibrate(context, VibrationEffect.EFFECT_DOUBLE_CLICK)
                         scope.launch {
                             val target = if (scale.value != 1f) 1f else 2.5f
                             scale.animateTo(target)

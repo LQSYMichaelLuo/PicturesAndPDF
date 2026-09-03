@@ -72,6 +72,7 @@ import androidx.compose.ui.draganddrop.mimeTypes
 import androidx.compose.ui.draganddrop.toAndroidDragEvent
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
@@ -212,6 +213,7 @@ fun PictureGroupCard(
                         interactionSource = interactionSource,
                         indication = null
                     ) {
+                        HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
                         viewModel.foldState(PDFName).value = !foldStatus
                         viewModel.rotationState(PDFName).value += 180f
                     },
@@ -244,6 +246,7 @@ fun PictureGroupCard(
                     ) {
                         IconButton(
                             onClick = {
+                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
                                 isChangeNameDialogShow = true
                             }
                         ) {
@@ -263,6 +266,7 @@ fun PictureGroupCard(
                     ) {
                         IconButton(
                             onClick = {
+                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
                                 isDeleteDialogShow = true
                             }
                         ) {
@@ -296,12 +300,14 @@ fun PictureGroupCard(
                                     interactionSource = interactionSource,
                                     indication = LocalIndication.current,
                                     onClick = {
+                                        HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
                                         viewModel.foldState(PDFName).value = !foldStatus
                                         viewModel.rotationState(PDFName).value += 180f
                                     }
                                 )
                                 .clip(CircleShape),
                             onClick = {
+                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
                                 viewModel.foldState(PDFName).value = !foldStatus
                                 viewModel.rotationState(PDFName).value += 180f
                             }
@@ -326,6 +332,7 @@ fun PictureGroupCard(
                     val thumbModifier = Modifier
                         .size(itemWidth)
                         .clip(RoundedCornerShape(8.dp))
+                        .background(Color.White)
                     FlowRow(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -357,6 +364,7 @@ fun PictureGroupCard(
 
                                     val clickModifier = thumbModifier.combinedClickable(
                                         onClick = {
+                                            HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
                                             val imagePreviewData = ImagePreviewData(
                                                 bitmapList = bitmapList.toMutableStateList()
                                             )
@@ -367,6 +375,7 @@ fun PictureGroupCard(
                                             rootNavController.navigate("image_preview/$newPDFNameTitle.pdf/$index")
                                         },
                                         onLongClick = {
+                                            HapticManager.vibrate(context, HapticManager.EFFECT_HEAVY_CLICK)
                                             deletePictureButtonShow = !deletePictureButtonShow
                                         }
                                     )
@@ -411,6 +420,7 @@ fun PictureGroupCard(
                                                         shape = CircleShape
                                                     ),
                                                 onClick = {
+                                                    HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
                                                     viewModel.deletePictureFromGroup(
                                                         pdfName = newPDFName + ".pdf",
                                                         bitmap
@@ -445,6 +455,7 @@ fun PictureGroupCard(
                                             override fun onStarted(event: DragAndDropEvent) {}
 
                                             override fun onEntered(event: DragAndDropEvent) {
+                                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
                                                 val press = PressInteraction.Press(Offset.Zero)
                                                 dragPress.value = press
                                                 addButtonInteractionSource.tryEmit(press)
@@ -488,7 +499,10 @@ fun PictureGroupCard(
                                 containerColor = MaterialTheme.colorScheme.secondaryContainer,
                                 contentColor = MaterialTheme.colorScheme.secondary
                             ),
-                            onClick = { onImportPicture(PDFName) }
+                            onClick = {
+                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
+                                onImportPicture(PDFName)
+                            }
                         ) {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally
@@ -523,6 +537,7 @@ fun PictureGroupCard(
                     confirmButton = {
                         TextButton(
                             onClick = {
+                                HapticManager.vibrate(context, HapticManager.EFFECT_HEAVY_CLICK)
                                 isDeleteDialogShow = false
                                 viewModel.deletePicturesGroup(PDFName)
                             },
@@ -538,6 +553,7 @@ fun PictureGroupCard(
                     dismissButton = {
                         TextButton(
                             onClick = {
+                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
                                 isDeleteDialogShow = false
                             }
                         ) {
@@ -556,6 +572,7 @@ fun PictureGroupCard(
                                 OutlinedTextField(
                                     value = newPDFName,
                                     onValueChange = {
+                                        HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
                                         newPDFName = it
                                         isError = newPDFName.isBlank()
                                     },
@@ -580,6 +597,7 @@ fun PictureGroupCard(
                         TextButton(
                             enabled = newPDFName.isNotBlank(),
                             onClick = {
+                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
                                 if (newPDFName.isNotBlank()) {
                                     isChangeNameDialogShow = false
                                     val finalName = onPDFNameChange(PDFName, newPDFName)
@@ -592,6 +610,7 @@ fun PictureGroupCard(
                     dismissButton = {
                         TextButton(
                             onClick = {
+                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
                                 isChangeNameDialogShow = false
                             }
                         ) {

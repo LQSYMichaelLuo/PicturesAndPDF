@@ -42,12 +42,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -341,6 +341,7 @@ private fun PdfFastScrollbar(
     modifier: Modifier = Modifier
 ) {
     val density = LocalDensity.current
+    val context = LocalContext.current
     var trackHeightPx by remember { mutableIntStateOf(0) }
 
     val thumbHeightPx = remember(trackHeightPx, viewportHeightPx, totalContentPx) {
@@ -359,8 +360,8 @@ private fun PdfFastScrollbar(
         label = "scrollbarAlpha"
     )
 
-    val thumbColor = Color.DarkGray
-    val trackColor = Color.LightGray
+    val thumbColor = MaterialTheme.colorScheme.onSurface
+    val trackColor = MaterialTheme.colorScheme.surface
     val pillShape = RoundedCornerShape(percent = 50)
 
     Box(
@@ -369,7 +370,10 @@ private fun PdfFastScrollbar(
             .fillMaxHeight()
             .graphicsLayer { this.alpha = alpha }
             .background(trackColor, pillShape)
-            .onSizeChanged { trackHeightPx = it.height }
+            .onSizeChanged {
+                HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
+                trackHeightPx = it.height
+            }
             .pointerInput(travelPx, totalContentPx, viewportHeightPx) {
                 if (travelPx <= 0 || totalContentPx <= 0) return@pointerInput
                 val maxScroll = (totalContentPx - viewportHeightPx).coerceAtLeast(0)
@@ -378,6 +382,7 @@ private fun PdfFastScrollbar(
                     onDragEnd = { onDragStateChange(false) },
                     onDragCancel = { onDragStateChange(false) },
                     onVerticalDrag = { change, dragAmount ->
+                        HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
                         change.consume()
                         onScrollBy(dragAmount / travelPx.toFloat() * maxScroll)
                     }

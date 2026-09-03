@@ -73,6 +73,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.LineBreak
@@ -109,6 +110,7 @@ fun MainScreen(
     }
     val context = LocalContext.current
     val density = LocalDensity.current
+    val haptics = LocalHapticFeedback.current
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(
         rememberTopAppBarState()
     )
@@ -172,21 +174,20 @@ fun MainScreen(
                             }
                             if (AppFlags.debuggable.value)
                                 TextButton(
-                                    onClick = { viewModel.printLong("Using layout of dwarf: ${isPhoneLandscape}") },
+                                    onClick = {
+                                        HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
+                                        viewModel.printLong("Using layout of dwarf: ${isPhoneLandscape}")
+                                    },
                                 ) {
                                     Text("info")
                                 }
                         }
                     },
-                    //scrollBehavior = scrollBehavior,
+
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.surface,
-                        //scrolledContainerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(6.dp)
                     ),
                     actions = {
-                        val density = LocalDensity.current
-                        val context = LocalContext.current
-
                         TooltipBox(
                             positionProvider = rememberTooltipPositionProvider(
                                 TooltipAnchorPosition.Below
@@ -236,6 +237,10 @@ fun MainScreen(
                                                 }
 
                                                 override fun onEntered(event: DragAndDropEvent) {
+                                                    HapticManager.vibrate(
+                                                        context,
+                                                        HapticManager.EFFECT_CLICK
+                                                    )
                                                     val press = PressInteraction.Press(Offset.Zero)
                                                     dragPress.value = press
                                                     importButtonInteractionSource.tryEmit(press)
@@ -285,6 +290,7 @@ fun MainScreen(
                                     contentColor = contentColor
                                 ),
                                 onClick = {
+                                    HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
                                     when (currentRoute) {
                                         Screen.Pic2PDF.route -> {
                                             onImportPicture(null)
@@ -357,6 +363,7 @@ fun MainScreen(
                             }
                             IconButton(
                                 onClick = {
+                                    HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
                                     when (currentRoute) {
                                         Screen.Pic2PDF.route -> {
                                             if (!viewModel.pictureInputList.isEmpty()) {
@@ -389,6 +396,7 @@ fun MainScreen(
                         ) {
                             IconButton(
                                 onClick = {
+                                    HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
                                     context.startActivity(
                                         Intent(
                                             context,
@@ -502,6 +510,10 @@ fun MainScreen(
                                                 }
 
                                                 override fun onEntered(event: DragAndDropEvent) {
+                                                    HapticManager.vibrate(
+                                                        context,
+                                                        HapticManager.EFFECT_CLICK
+                                                    )
                                                     val press = PressInteraction.Press(Offset.Zero)
                                                     dragPress.value = press
                                                     importButtonInteractionSource.tryEmit(press)
@@ -551,6 +563,7 @@ fun MainScreen(
                                     contentColor = contentColor
                                 ),
                                 onClick = {
+                                    HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
                                     when (currentRoute) {
                                         Screen.Pic2PDF.route -> {
                                             onImportPicture(null)
@@ -614,7 +627,13 @@ fun MainScreen(
                                     confirmButton = {
                                         TextButton(
                                             enabled = !isExporting,
-                                            onClick = viewModel::dismissExportDialog
+                                            onClick = {
+                                                HapticManager.vibrate(
+                                                    context,
+                                                    HapticManager.EFFECT_CLICK
+                                                )
+                                                viewModel::dismissExportDialog
+                                            }
                                         ) {
                                             Text(stringResource(R.string.ok))
                                         }
@@ -623,6 +642,7 @@ fun MainScreen(
                             }
                             IconButton(
                                 onClick = {
+                                    HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
                                     when (currentRoute) {
                                         Screen.Pic2PDF.route -> {
                                             if (!viewModel.pictureInputList.isEmpty()) {
@@ -655,6 +675,7 @@ fun MainScreen(
                         ) {
                             IconButton(
                                 onClick = {
+                                    HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
                                     context.startActivity(
                                         Intent(
                                             context,
@@ -749,10 +770,11 @@ fun RowScope.AddItem(
     navController: NavHostController
 ) {
     val isSelected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
-
+    val context = LocalContext.current
     NavigationBarItem(
         selected = isSelected,
         onClick = {
+            HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
             navController.navigate(screen.route) {
                 launchSingleTop = true
                 restoreState = true
@@ -800,10 +822,11 @@ fun ColumnScope.AddRailItem(
 ) {
     val isSelected =
         currentDestination?.hierarchy?.any { it.route == screen.route } == true
-
+    val context = LocalContext.current
     NavigationRailItem(
         selected = isSelected,
         onClick = {
+            HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
             navController.navigate(screen.route) {
                 launchSingleTop = true
                 restoreState = true

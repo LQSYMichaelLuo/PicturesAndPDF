@@ -40,6 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -56,6 +57,7 @@ fun SettingsScreen(
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val debugState by viewModel.debuggable
     val density = LocalDensity.current
+    val context = LocalContext.current
     var clearEnabled by remember { mutableStateOf(true) }
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -73,7 +75,11 @@ fun SettingsScreen(
                         },
                         state = rememberTooltipState()
                     ) {
-                        IconButton(onClick = onBack) {
+                        IconButton(
+                            onClick = {
+                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
+                                onBack()
+                            }) {
                             Icon(
                                 painter = painterResource(R.drawable.ic_arrow_back),
                                 contentDescription = "返回"
@@ -89,6 +95,9 @@ fun SettingsScreen(
                 .padding(paddingValues)
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
+                .onSizeChanged {
+                    HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
+                }
         ) {
             val context = LocalContext.current
             var licenseText by remember { mutableStateOf("License") }
@@ -100,6 +109,7 @@ fun SettingsScreen(
                 trailingContent = {
                     Button(
                         onClick = {
+                            HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
                             viewModel.clearFileCache(context)
                             clearEnabled = false
                         },
@@ -115,6 +125,7 @@ fun SettingsScreen(
                 modifier = Modifier.clickable(
                     enabled = clearEnabled
                 ) {
+                    HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
                     clearEnabled = false
                     viewModel.clearFileCache(context)
                 }
@@ -125,6 +136,7 @@ fun SettingsScreen(
                 title = "Show Debug Text",
                 checked = debugState,
                 onCheckedChange = {
+                    HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
                     viewModel.toggleDebug()
                 }
             )
@@ -135,6 +147,7 @@ fun SettingsScreen(
                 supportingContent = { Text("Apache License 2.0") },
                 modifier = Modifier.combinedClickable(
                     onClick = {
+                        HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
                         val intent = CustomTabsIntent.Builder()
                             .setShowTitle(true)
                             .build()
@@ -144,6 +157,7 @@ fun SettingsScreen(
                         )
                     },
                     onLongClick = {
+                        HapticManager.vibrate(context, HapticManager.EFFECT_HEAVY_CLICK)
                         isLicenseShow = true
                     }
                 )
@@ -169,6 +183,7 @@ fun SettingsScreen(
                     confirmButton = {
                         TextButton(
                             onClick = {
+                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
                                 isLicenseShow = false
                             }
                         ) {

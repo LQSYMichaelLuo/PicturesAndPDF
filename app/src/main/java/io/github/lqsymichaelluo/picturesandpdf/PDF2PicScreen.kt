@@ -71,6 +71,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -153,7 +154,7 @@ fun PDFCard(
     rootNavController: NavController
 ) {
     val state = viewModel.pdfInputList[pdfName] ?: return
-
+    val context = LocalContext.current
     var operateMode by viewModel.operateModeState(pdfName)
     val isOperatingAreaShow = operateMode != OperateMode.NONE
 
@@ -207,6 +208,7 @@ fun PDFCard(
                         )
                         .combinedClickable(
                             onClick = {
+                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
                                 rootNavController.navigate(
                                     "pdf_preview/$pdfName"
                                 )
@@ -243,7 +245,10 @@ fun PDFCard(
                         state = rememberTooltipState()
                     ) {
                         TextButton(
-                            onClick = { toggleMode(OperateMode.SCALE) },
+                            onClick = {
+                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
+                                toggleMode(OperateMode.SCALE)
+                            },
                             colors = ButtonDefaults.textButtonColors(
                                 containerColor = containerColor
                             )
@@ -263,7 +268,10 @@ fun PDFCard(
                         tooltip = { PlainTooltip { Text("改变输出图片背景颜色") } },
                         state = rememberTooltipState()
                     ) {
-                        IconButton(onClick = { toggleMode(OperateMode.PALETTE) }) {
+                        IconButton(onClick = {
+                            HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
+                            toggleMode(OperateMode.PALETTE)
+                        }) {
                             Icon(
                                 painter = painterResource(
                                     if (operateMode == OperateMode.PALETTE)
@@ -284,6 +292,7 @@ fun PDFCard(
                             state = rememberTooltipState()
                         ) {
                             IconButton(onClick = {
+                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
                                 toggleMode(OperateMode.PAGE)
                             }) {
                                 Icon(
@@ -301,6 +310,7 @@ fun PDFCard(
                             state = rememberTooltipState()
                         ) {
                             IconButton(onClick = {
+                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
                                 toggleMode(OperateMode.PAGE)
                             }) {
                                 Icon(
@@ -320,6 +330,7 @@ fun PDFCard(
                     ) {
                         IconButton(
                             onClick = {
+                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
                                 isDeleteDialogShow = true
                             }
                         ) {
@@ -353,6 +364,7 @@ fun PDFCard(
                             Slider(
                                 value = state.scale,
                                 onValueChange = {
+                                    HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
                                     viewModel.setScale(pdfName, it)
                                 },
                                 valueRange = 1f..6f,
@@ -385,6 +397,7 @@ fun PDFCard(
                                     value = value,
                                     alpha = alpha,
                                     onHueChange = {
+                                        HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
                                         hue = it
                                         viewModel.setBackgroundColor(
                                             pdfName,
@@ -397,6 +410,7 @@ fun PDFCard(
                                         )
                                     },
                                     onSaturationChange = {
+                                        HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
                                         saturation = it
                                         viewModel.setBackgroundColor(
                                             pdfName,
@@ -409,6 +423,7 @@ fun PDFCard(
                                         )
                                     },
                                     onValueChange = {
+                                        HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
                                         value = it
                                         viewModel.setBackgroundColor(
                                             pdfName,
@@ -421,6 +436,7 @@ fun PDFCard(
                                         )
                                     },
                                     onAlphaChange = {
+                                        HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
                                         alpha = it
                                         viewModel.setBackgroundColor(
                                             pdfName,
@@ -476,9 +492,17 @@ fun PDFCard(
                                             //interactionSource = remember { MutableInteractionSource() },
                                             //indication = null,
                                             onClick = {
+                                                HapticManager.vibrate(
+                                                    context,
+                                                    HapticManager.EFFECT_CLICK
+                                                )
                                                 viewModel.print("MEOW!!!")
                                             },
                                             onLongClick = {
+                                                HapticManager.vibrate(
+                                                    context,
+                                                    HapticManager.EFFECT_CLICK
+                                                )
                                                 viewModel.copyToClipboard(
                                                     text = editingColor.toHexString(),
                                                     label = "?"
@@ -497,6 +521,10 @@ fun PDFCard(
                                         state = rememberTooltipState()
                                     ) {
                                         IconButton(onClick = {
+                                            HapticManager.vibrate(
+                                                context,
+                                                HapticManager.EFFECT_CLICK
+                                            )
                                             isColorInputDialogShow = true
                                         }) {
                                             Icon(
@@ -514,6 +542,10 @@ fun PDFCard(
                                         state = rememberTooltipState()
                                     ) {
                                         IconButton(onClick = {
+                                            HapticManager.vibrate(
+                                                context,
+                                                HapticManager.EFFECT_CLICK
+                                            )
                                             viewModel.addColor(editingColor.toHexString())
                                         }) {
                                             Icon(
@@ -563,6 +595,10 @@ fun PDFCard(
                                                 else -> false
                                             },
                                             onClick = {
+                                                HapticManager.vibrate(
+                                                    context,
+                                                    HapticManager.EFFECT_CLICK
+                                                )
                                                 viewModel.setMultiPage(pdfName, index == 0)
                                             },
                                             shape = SegmentedButtonDefaults.itemShape(
@@ -610,6 +646,10 @@ fun PDFCard(
                                                     viewModel.pdfInputList[pdfName]?.toMultiplePictures == false,
                                             selected = index == viewModel.pdfInputList[pdfName]?.alignMode,
                                             onClick = {
+                                                HapticManager.vibrate(
+                                                    context,
+                                                    HapticManager.EFFECT_CLICK
+                                                )
                                                 viewModel.setAlignMode(pdfName, index)
                                             },
                                             shape = SegmentedButtonDefaults.itemShape(
@@ -655,6 +695,10 @@ fun PDFCard(
                                             enabled = viewModel.pdfInputList[pdfName]?.toMultiplePictures == false,
                                             selected = index == viewModel.pdfInputList[pdfName]?.stretchMode,
                                             onClick = {
+                                                HapticManager.vibrate(
+                                                    context,
+                                                    HapticManager.EFFECT_CLICK
+                                                )
                                                 viewModel.setStretchMode(pdfName, index)
                                                 if (index != 0) viewModel.setAlignMode(pdfName, 0)
                                             },
@@ -708,11 +752,15 @@ fun PDFCard(
                                             selected = selected,
                                             modifier = Modifier,
                                             onClick = {
+                                                HapticManager.vibrate(
+                                                    context,
+                                                    HapticManager.EFFECT_CLICK
+                                                )
                                                 viewModel.setFormatMode(pdfName, index)
                                                 if (index != 0) viewModel.setAlignMode(pdfName, 0)
                                             },
                                             label = { Text(label) },
-                                            shape = if (selected){
+                                            shape = if (selected) {
                                                 CircleShape
                                             } else {
                                                 RoundedCornerShape(8.dp)
@@ -758,6 +806,10 @@ fun PDFCard(
                                     Slider(
                                         value = state.quality.toFloat(),
                                         onValueChange = {
+                                            HapticManager.vibrate(
+                                                context,
+                                                HapticManager.EFFECT_TICK
+                                            )
                                             viewModel.setQuality(pdfName, it.roundToInt())
                                         },
                                         valueRange = 0f..100f,
@@ -834,6 +886,10 @@ fun PDFCard(
                                                             interactionSource = interactionSource,
                                                             indication = null
                                                         ) {
+                                                            HapticManager.vibrate(
+                                                                context,
+                                                                HapticManager.EFFECT_TICK
+                                                            )
                                                             inputText = color.toHexString()
                                                         }
                                                 )
@@ -856,6 +912,10 @@ fun PDFCard(
                                                             interactionSource = interactionSource,
                                                             indication = null
                                                         ) {
+                                                            HapticManager.vibrate(
+                                                                context,
+                                                                HapticManager.EFFECT_TICK
+                                                            )
                                                             inputText = color.toHexString()
                                                         }
                                                 )
@@ -870,7 +930,10 @@ fun PDFCard(
                         OutlinedTextField(
                             value = inputText,
                             modifier = Modifier.fillMaxWidth(),
-                            onValueChange = { inputText = it.take(10) },
+                            onValueChange = {
+                                HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
+                                inputText = it.take(10)
+                            },
                             label = { Text("十六进制颜色") },
                             placeholder = { Text("#AARRGGBB") },
                             singleLine = true,
@@ -902,6 +965,10 @@ fun PDFCard(
                                                     interactionSource = interactionSource,
                                                     indication = null
                                                 ) {
+                                                    HapticManager.vibrate(
+                                                        context,
+                                                        HapticManager.EFFECT_TICK
+                                                    )
                                                     inputText = parsedColor.toHexString()
                                                 }
                                         )
@@ -916,6 +983,10 @@ fun PDFCard(
                                                     interactionSource = interactionSource,
                                                     indication = null
                                                 ) {
+                                                    HapticManager.vibrate(
+                                                        context,
+                                                        HapticManager.EFFECT_TICK
+                                                    )
                                                     inputText = parsedColor.toHexString()
                                                 }
                                         )
@@ -928,6 +999,7 @@ fun PDFCard(
                         TextButton(
                             enabled = parsedColor != null,
                             onClick = {
+                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
                                 parsedColor?.let {
                                     viewModel.setBackgroundColor(pdfName, it)
                                     val hsv = it.toHsva()
@@ -941,7 +1013,10 @@ fun PDFCard(
                         ) { Text(stringResource(R.string.ok)) }
                     },
                     dismissButton = {
-                        TextButton(onClick = { isColorInputDialogShow = false }) {
+                        TextButton(onClick = {
+                            HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
+                            isColorInputDialogShow = false
+                        }) {
                             Text(stringResource(R.string.cancel))
                         }
                     }
@@ -965,6 +1040,7 @@ fun PDFCard(
                     confirmButton = {
                         TextButton(
                             onClick = {
+                                HapticManager.vibrate(context, HapticManager.EFFECT_HEAVY_CLICK)
                                 isDeleteDialogShow = false
                                 viewModel.deletePDF(pdfName)
                             },
@@ -980,6 +1056,7 @@ fun PDFCard(
                     dismissButton = {
                         TextButton(
                             onClick = {
+                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
                                 isDeleteDialogShow = false
                             }
                         ) {

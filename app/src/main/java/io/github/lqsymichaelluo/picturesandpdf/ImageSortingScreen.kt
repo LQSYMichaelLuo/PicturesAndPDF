@@ -151,7 +151,12 @@ fun ImageSortingScreen(
                         },
                         state = rememberTooltipState()
                     ) {
-                        IconButton(onClick = onBack) {
+                        IconButton(
+                            onClick = {
+                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
+                                onBack()
+                            }
+                        ) {
                             Icon(
                                 painter = painterResource(R.drawable.ic_arrow_back),
                                 contentDescription = null
@@ -191,6 +196,7 @@ fun ImageSortingScreen(
                                             }
 
                                             override fun onEntered(event: DragAndDropEvent) {
+                                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
                                                 val press = PressInteraction.Press(Offset.Zero)
                                                 dragPress.value = press
                                                 importButtonInteractionSource.tryEmit(press)
@@ -235,6 +241,7 @@ fun ImageSortingScreen(
                                 contentColor = contentColor
                             ),
                             onClick = {
+                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
                                 onImportPicture(pdfName)
                             }
                         ) {
@@ -276,8 +283,11 @@ fun ImageSortingScreen(
                             if (zoomChange != 1f) {
                                 scale = (scale * zoomChange).coerceIn(0.45f, 2.5f)
 
+                                HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
+
                                 val previewEntry = imagePreviewViewModel.imagePreviewList[pdfName]
                                 if (scale >= 2f && previewEntry != null && !previewEntry.hasTriggeredPreview) {
+                                    HapticManager.vibrate(context, HapticManager.EFFECT_HEAVY_CLICK)
                                     imagePreviewViewModel.setTriggerPreview(
                                         pdfName = pdfName,
                                         triggered = true
@@ -285,7 +295,9 @@ fun ImageSortingScreen(
                                     onBack()
                                 }
                             }
-                            event.changes.forEach { it.consume() }
+                            event.changes.forEach {
+                                it.consume()
+                            }
                         }
                     }
                 }
@@ -356,6 +368,7 @@ fun ImageSortingScreen(
                                             shape = shape
                                         )
                                         .clip(shape)
+                                        .background(Color.White)
                                         .border(
                                             width = borderStrokeWidth,
                                             color = MaterialTheme.colorScheme.onSurface,
