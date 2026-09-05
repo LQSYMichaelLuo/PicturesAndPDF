@@ -1,9 +1,11 @@
 package io.github.lqsymichaelluo.picturesandpdf
 
 import android.content.Context
+import androidx.activity.ComponentActivity
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -39,6 +41,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
@@ -58,9 +64,27 @@ fun SettingsScreen(
     val debugState by viewModel.debuggable
     val density = LocalDensity.current
     val context = LocalContext.current
+    val activity = context as? ComponentActivity
     var clearEnabled by remember { mutableStateOf(true) }
+    val focusRequester = remember { FocusRequester() }
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
     Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
+            .focusRequester(focusRequester)
+            .focusable()
+            .onPreviewKeyEvent { event ->
+                if (
+                    event.matches(key = Key.B, ctrl = true)
+                    || event.matches(key = Key.Backspace)
+                ) {
+                    activity?.finish()
+                    true
+                } else {
+                    false
+                }
+            },
         topBar = {
             LargeTopAppBar(
                 title = { Text(stringResource(R.string.settings)) },

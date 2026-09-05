@@ -10,6 +10,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.draganddrop.dragAndDropTarget
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Arrangement
@@ -59,7 +60,9 @@ import androidx.compose.material3.rememberTooltipState
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -70,8 +73,20 @@ import androidx.compose.ui.draganddrop.DragAndDropEvent
 import androidx.compose.ui.draganddrop.DragAndDropTarget
 import androidx.compose.ui.draganddrop.mimeTypes
 import androidx.compose.ui.draganddrop.toAndroidDragEvent
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isAltPressed
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.isMetaPressed
+import androidx.compose.ui.input.key.isShiftPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
@@ -152,6 +167,35 @@ fun MainScreen(
     val phoneLandscapeTopAppBarScrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(
         rememberTopAppBarState()
     )
+    val isScrolled by remember {
+        derivedStateOf {
+            topAppBarScrollBehavior.state.overlappedFraction > 0.01f
+        }
+    }
+    val isPhoneLandscapeScrolled by remember {
+        derivedStateOf {
+            phoneLandscapeTopAppBarScrollBehavior.state.overlappedFraction > 0.01f
+        }
+    }
+    val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
+    LaunchedEffect(isScrolled) {
+        if (isScrolled) {
+            HapticManager.vibrate(context, HapticManager.EFFECT_HEAVY_CLICK)
+        } else {
+            HapticManager.vibrate(context, HapticManager.EFFECT_HEAVY_CLICK)
+        }
+    }
+    LaunchedEffect(isPhoneLandscapeScrolled) {
+        if (isScrolled) {
+            HapticManager.vibrate(context, HapticManager.EFFECT_HEAVY_CLICK)
+        } else {
+            HapticManager.vibrate(context, HapticManager.EFFECT_HEAVY_CLICK)
+        }
+    }
     if (isPhoneLandscape)
         Scaffold(
             modifier = Modifier.nestedScroll(phoneLandscapeTopAppBarScrollBehavior.nestedScrollConnection),
@@ -457,7 +501,44 @@ fun MainScreen(
         Scaffold(
             modifier = Modifier
                 .fillMaxSize()
-                .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection),
+                .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection)
+                .focusRequester(focusRequester)
+                .focusable()
+                .onPreviewKeyEvent { event ->
+                    if (
+                        event.matches(key = Key.P, ctrl = true)
+                    ) {
+                        when (currentRoute) {
+                            Screen.Pic2PDF.route -> {
+                                navController.navigate(route = Screen.PDF2Pic.route)
+                            }
+
+                            Screen.PDF2Pic.route -> {
+                                navController.navigate(route = Screen.Pic2PDF.route)
+                            }
+
+                            else -> {}
+                        }
+                        true
+                    } else if (
+                        event.matches(key = Key.B, ctrl = true)
+                    ) {
+                        navController.popBackStack()
+                        true
+                    } else if (
+                        event.matches(key = Key.S, ctrl = true)
+                    ) {
+                        context.startActivity(
+                            Intent(
+                                context,
+                                SettingsActivity::class.java
+                            )
+                        )
+                        true
+                    } else {
+                        false
+                    }
+                },
             topBar = {
                 TopAppBar(
                     scrollBehavior = topAppBarScrollBehavior,
@@ -730,6 +811,12 @@ fun MainScreen(
         }
 }
 
+
+@Composable
+fun TopAppBarContent() {
+
+}
+
 @Composable
 fun BottomBar(navController: NavHostController) {
     val screens = listOf(
@@ -887,4 +974,20 @@ fun ColumnScope.AddRailItem(
         alwaysShowLabel = true
     )
 }
+
+fun KeyEvent.matches(
+    key: Key,
+    ctrl: Boolean = false,
+    shift: Boolean = false,
+    alt: Boolean = false,
+    meta: Boolean = false,
+): Boolean {
+    return type == KeyEventType.KeyDown &&
+            this.key == key &&
+            isCtrlPressed == ctrl &&
+            isShiftPressed == shift &&
+            isAltPressed == alt &&
+            isMetaPressed == meta
+}
+
 

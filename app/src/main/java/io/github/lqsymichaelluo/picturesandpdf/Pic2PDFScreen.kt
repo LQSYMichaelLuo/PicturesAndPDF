@@ -2,15 +2,19 @@ package io.github.lqsymichaelluo.picturesandpdf
 
 import android.graphics.Bitmap
 import android.view.DragEvent
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -37,10 +41,10 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -82,6 +86,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import kotlin.math.roundToInt
@@ -187,17 +192,25 @@ fun PictureGroupCard(
     rootNavController: NavHostController
 ) {
     val context = LocalContext.current
-    val foldStatus by viewModel.foldState(PDFName)
+    var controlMode by viewModel.controlModeState(PDFName)
+    val pictureShowState = controlMode == ControlMode.SHOW
     val rotation by viewModel.rotationState(PDFName)
     var isError by remember { mutableStateOf(false) }
-    var isChangeNameDialogShow by viewModel.changeNameDialogShowState(PDFName)
-    var isDeleteDialogShow by viewModel.deletePicturesDialogShowState(PDFName)
+    var isConfigChangerShow = controlMode == ControlMode.CONFIG
+    var isDeleteDialogShow = controlMode == ControlMode.DELETE
     var newPDFName by viewModel.newNameState(PDFName)
     var newPDFNameTitle by remember { mutableStateOf(newPDFName) }
-    val interactionSource = remember { MutableInteractionSource() }
     val addButtonInteractionSource = remember { MutableInteractionSource() }
     val dragPress = remember { mutableStateOf<PressInteraction.Press?>(null) }
-
+    val errorColor by animateColorAsState(
+        targetValue = if (controlMode == ControlMode.DELETE) MaterialTheme.colorScheme.error else CardDefaults.cardColors().contentColor
+    )
+    fun toggleMode(target: ControlMode) {
+        if ((target != ControlMode.SHOW && controlMode == ControlMode.SHOW) || (target == ControlMode.SHOW && controlMode != ControlMode.SHOW) || (target == ControlMode.SHOW && controlMode == ControlMode.SHOW)) {
+            viewModel.rotationState(PDFName).value += 180f
+        }
+        controlMode = if (controlMode == target) ControlMode.NONE else target
+    }
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp)
@@ -210,45 +223,36 @@ fun PictureGroupCard(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable(
-                        interactionSource = interactionSource,
-                        indication = null
-                    ) {
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable {
                         HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
-                        viewModel.foldState(PDFName).value = !foldStatus
-                        viewModel.rotationState(PDFName).value += 180f
+                        toggleMode(ControlMode.SHOW)
                     },
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                TooltipBox(
-                    positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-                        TooltipAnchorPosition.Above
-                    ),
-                    tooltip = { PlainTooltip { Text(PDFName) } },
-                    state = rememberTooltipState(),
-                ) {
-                    Text(
-                        text = "$newPDFNameTitle.pdf",
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier
-                            .padding(start = 8.dp)
-                            .weight(1f)
-                    )
-                }
+                Text(
+                    text = "$newPDFNameTitle.pdf",
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.MiddleEllipsis,
+                    modifier = Modifier
+                        .padding(start = 8.dp)
+                        .weight(1f, fill = false)
+                )
                 Row {
-                    val renameTooltipState = rememberTooltipState()
+                    val configTooltipState = rememberTooltipState()
                     TooltipBox(
                         positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
                             TooltipAnchorPosition.Above
                         ),
-                        tooltip = { PlainTooltip { Text("更改输出的PDF名") } },
-                        state = renameTooltipState
+                        tooltip = { PlainTooltip { Text("更改输出设置") } },
+                        state = configTooltipState
                     ) {
                         IconButton(
                             onClick = {
                                 HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
-                                isChangeNameDialogShow = true
+                                toggleMode(ControlMode.CONFIG)
                             }
                         ) {
                             Icon(
@@ -268,12 +272,13 @@ fun PictureGroupCard(
                         IconButton(
                             onClick = {
                                 HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
-                                isDeleteDialogShow = true
+                                toggleMode(ControlMode.DELETE)
                             }
                         ) {
                             Icon(
                                 painter = painterResource(R.drawable.ic_delete),
-                                contentDescription = null
+                                contentDescription = null,
+                                tint = errorColor
                             )
                         }
                     }
@@ -297,20 +302,10 @@ fun PictureGroupCard(
                     ) {
                         IconButton(
                             modifier = Modifier
-                                .clickable(
-                                    interactionSource = interactionSource,
-                                    indication = LocalIndication.current,
-                                    onClick = {
-                                        HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
-                                        viewModel.foldState(PDFName).value = !foldStatus
-                                        viewModel.rotationState(PDFName).value += 180f
-                                    }
-                                )
                                 .clip(CircleShape),
                             onClick = {
                                 HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
-                                viewModel.foldState(PDFName).value = !foldStatus
-                                viewModel.rotationState(PDFName).value += 180f
+                                toggleMode(ControlMode.SHOW)
                             }
                         ) {
                             Icon(
@@ -322,303 +317,335 @@ fun PictureGroupCard(
                 }
             }
             AnimatedVisibility(
-                visible = !foldStatus,
+                visible = controlMode != ControlMode.NONE,
+                enter = fadeIn() + slideInVertically(),
+                exit = fadeOut() + slideOutVertically()
             ) {
-                BoxWithConstraints {
-                    val picMinWidth = 92.dp
-                    val picMaxWidth = 104.dp
-                    val itemNum = (maxWidth - 8.dp) / ((picMinWidth + picMaxWidth) / 2 + 8.dp)
-                    val itemWidth = ((maxWidth - 4.dp) / itemNum.roundToInt()) - 8.dp
-                    val itemWidthPx = with(LocalDensity.current) { itemWidth.toPx() }.roundToInt()
-                    val thumbModifier = Modifier
-                        .size(itemWidth)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color.White)
-                    FlowRow(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(
-                                start = 4.dp,
-                                end = 4.dp,
-                                top = 4.dp,
-                                bottom = 4.dp
-                            ),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        bitmapList.forEachIndexed { index, bitmap ->
-                            val code = System.identityHashCode(bitmap)
-                            var deletePictureButtonShow by viewModel.deletePictureButtonShowState(
-                                code
-                            )
-                            key(code) {
-                                Box(
-                                    modifier = Modifier.size(itemWidth)
-                                ) {
-                                    val thumbnail = rememberLazyThumbnail(
-                                        source = bitmap,
-                                        targetPx = itemWidthPx,
-                                        gridState = gridState
+                AnimatedContent(
+                    targetState = controlMode,
+                    transitionSpec = { fadeIn() togetherWith fadeOut() }
+                ) { target ->
+                    when (target) {
+                        ControlMode.SHOW -> BoxWithConstraints {
+                            val picMinWidth = 92.dp
+                            val picMaxWidth = 104.dp
+                            val itemNum =
+                                (maxWidth - 8.dp) / ((picMinWidth + picMaxWidth) / 2 + 8.dp)
+                            val itemWidth = ((maxWidth - 4.dp) / itemNum.roundToInt()) - 8.dp
+                            val itemWidthPx =
+                                with(LocalDensity.current) { itemWidth.toPx() }.roundToInt()
+                            val thumbModifier = Modifier
+                                .size(itemWidth)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color.White)
+                            FlowRow(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(
+                                        start = 4.dp,
+                                        end = 4.dp,
+                                        top = 4.dp,
+                                        bottom = 4.dp
+                                    ),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                bitmapList.forEachIndexed { index, bitmap ->
+                                    val code = System.identityHashCode(bitmap)
+                                    var deletePictureButtonShow by viewModel.deletePictureButtonShowState(
+                                        code
                                     )
-                                    val imageBitmap =
-                                        remember(thumbnail) { thumbnail?.asImageBitmap() }
-
-                                    val clickModifier = thumbModifier.combinedClickable(
-                                        onClick = {
-                                            HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
-                                            val imagePreviewData = ImagePreviewData(
-                                                bitmapList = bitmapList.toMutableStateList()
-                                            )
-                                            imagePreviewViewModel.addImagePreviewList(
-                                                pdfName = "$newPDFNameTitle.pdf",
-                                                imagePreviewData = imagePreviewData
-                                            )
-                                            rootNavController.navigate("image_preview/$newPDFNameTitle.pdf/$index")
-                                        },
-                                        onLongClick = {
-                                            HapticManager.vibrate(context, HapticManager.EFFECT_HEAVY_CLICK)
-                                            deletePictureButtonShow = !deletePictureButtonShow
-                                        }
-                                    )
-
-                                    if (imageBitmap != null) {
-                                        Image(
-                                            bitmap = imageBitmap,
-                                            contentDescription = null,
-                                            contentScale = ContentScale.Crop,
-                                            modifier = clickModifier
-                                        )
-                                    } else {
-                                        LoadingIndicator()
-                                    }
-
-                                    CompositionLocalProvider(
-                                        LocalMinimumInteractiveComponentSize provides 4.dp
-                                    ) {
-                                        if (bitmapList.size <= 1) {
-                                            deletePictureButtonShow = false
-                                        }
-                                        androidx.compose.animation.AnimatedVisibility(
-                                            modifier = Modifier.align(Alignment.TopEnd),
-                                            visible = deletePictureButtonShow && !(bitmapList.size == 1 && index == 0),
-                                            enter = fadeIn(tween(150)) + scaleIn(
-                                                initialScale = 0.6f,
-                                                animationSpec = tween(150)
-                                            ),
-                                            exit = fadeOut(tween(100)) + scaleOut(
-                                                targetScale = 0.6f,
-                                                animationSpec = tween(100)
-                                            )
+                                    key(code) {
+                                        Box(
+                                            modifier = Modifier.size(itemWidth)
                                         ) {
-                                            IconButton(
-                                                modifier = Modifier
-                                                    .padding(1.5.dp)
-                                                    .size(24.dp)
-                                                    .background(
-                                                        color = MaterialTheme.colorScheme.surfaceContainer.copy(
-                                                            alpha = 0.45f
-                                                        ),
-                                                        shape = CircleShape
-                                                    ),
+                                            val thumbnail = rememberLazyThumbnail(
+                                                source = bitmap,
+                                                targetPx = itemWidthPx,
+                                                gridState = gridState
+                                            )
+                                            val imageBitmap =
+                                                remember(thumbnail) { thumbnail?.asImageBitmap() }
+
+                                            val clickModifier = thumbModifier.combinedClickable(
                                                 onClick = {
-                                                    HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
-                                                    viewModel.deletePictureFromGroup(
-                                                        pdfName = newPDFName + ".pdf",
-                                                        bitmap
+                                                    HapticManager.vibrate(
+                                                        context,
+                                                        HapticManager.EFFECT_CLICK
                                                     )
+                                                    val imagePreviewData = ImagePreviewData(
+                                                        bitmapList = bitmapList.toMutableStateList()
+                                                    )
+                                                    imagePreviewViewModel.addImagePreviewList(
+                                                        pdfName = "$newPDFNameTitle.pdf",
+                                                        imagePreviewData = imagePreviewData
+                                                    )
+                                                    rootNavController.navigate("image_preview/$newPDFNameTitle.pdf/$index")
+                                                },
+                                                onLongClick = {
+                                                    HapticManager.vibrate(
+                                                        context,
+                                                        HapticManager.EFFECT_HEAVY_CLICK
+                                                    )
+                                                    deletePictureButtonShow =
+                                                        !deletePictureButtonShow
                                                 }
-                                            ) {
-                                                Icon(
-                                                    painter = painterResource(R.drawable.ic_close),
-                                                    contentDescription = null
+                                            )
+
+                                            if (imageBitmap != null) {
+                                                Image(
+                                                    bitmap = imageBitmap,
+                                                    contentDescription = null,
+                                                    contentScale = ContentScale.Crop,
+                                                    modifier = clickModifier
                                                 )
+                                            } else {
+                                                LoadingIndicator()
+                                            }
+
+                                            CompositionLocalProvider(
+                                                LocalMinimumInteractiveComponentSize provides 4.dp
+                                            ) {
+                                                if (bitmapList.size <= 1) {
+                                                    deletePictureButtonShow = false
+                                                }
+                                                androidx.compose.animation.AnimatedVisibility(
+                                                    modifier = Modifier.align(Alignment.TopEnd),
+                                                    visible = deletePictureButtonShow && !(bitmapList.size == 1 && index == 0),
+                                                    enter = fadeIn(tween(150)) + scaleIn(
+                                                        initialScale = 0.6f,
+                                                        animationSpec = tween(150)
+                                                    ),
+                                                    exit = fadeOut(tween(100)) + scaleOut(
+                                                        targetScale = 0.6f,
+                                                        animationSpec = tween(100)
+                                                    )
+                                                ) {
+                                                    IconButton(
+                                                        modifier = Modifier
+                                                            .padding(1.5.dp)
+                                                            .size(24.dp)
+                                                            .background(
+                                                                color = MaterialTheme.colorScheme.surfaceContainer.copy(
+                                                                    alpha = 0.45f
+                                                                ),
+                                                                shape = CircleShape
+                                                            ),
+                                                        onClick = {
+                                                            HapticManager.vibrate(
+                                                                context,
+                                                                HapticManager.EFFECT_CLICK
+                                                            )
+                                                            viewModel.deletePictureFromGroup(
+                                                                pdfName = newPDFName + ".pdf",
+                                                                bitmap
+                                                            )
+                                                        }
+                                                    ) {
+                                                        Icon(
+                                                            painter = painterResource(R.drawable.ic_close),
+                                                            contentDescription = null
+                                                        )
+                                                    }
+                                                }
                                             }
                                         }
                                     }
                                 }
-                            }
-                        }
-                        Button(
-                            interactionSource = addButtonInteractionSource,
-                            modifier = Modifier
-                                .size(itemWidth)
-                                .border(
-                                    width = 1.dp,
-                                    color = MaterialTheme.colorScheme.secondary,
+                                Button(
+                                    interactionSource = addButtonInteractionSource,
+                                    modifier = Modifier
+                                        .size(itemWidth)
+                                        .border(
+                                            width = 1.dp,
+                                            color = MaterialTheme.colorScheme.secondary,
+                                            shape = RoundedCornerShape(8.dp),
+                                        )
+                                        .dragAndDropTarget(
+                                            shouldStartDragAndDrop = { event ->
+                                                event.mimeTypes().any { it.startsWith("image/") }
+                                            },
+                                            target = remember {
+                                                object : DragAndDropTarget {
+                                                    override fun onStarted(event: DragAndDropEvent) {}
+
+                                                    override fun onEntered(event: DragAndDropEvent) {
+                                                        HapticManager.vibrate(
+                                                            context,
+                                                            HapticManager.EFFECT_CLICK
+                                                        )
+                                                        val press =
+                                                            PressInteraction.Press(Offset.Zero)
+                                                        dragPress.value = press
+                                                        addButtonInteractionSource.tryEmit(press)
+                                                    }
+
+                                                    override fun onExited(event: DragAndDropEvent) {
+                                                        dragPress.value?.let {
+                                                            addButtonInteractionSource.tryEmit(
+                                                                PressInteraction.Cancel(it)
+                                                            )
+                                                        }
+                                                        dragPress.value = null
+                                                    }
+
+                                                    override fun onEnded(event: DragAndDropEvent) {
+                                                        dragPress.value?.let {
+                                                            addButtonInteractionSource.tryEmit(
+                                                                PressInteraction.Release(it)
+                                                            )
+                                                        }
+                                                        dragPress.value = null
+                                                    }
+
+                                                    override fun onDrop(event: DragAndDropEvent): Boolean {
+                                                        requestDragAndDropPermission(event.toAndroidDragEvent())
+                                                        val clipData = event
+                                                            .toAndroidDragEvent()
+                                                            .clipData ?: return false
+                                                        viewModel.addPicturesFromClipData(
+                                                            context,
+                                                            clipData,
+                                                            PDFName,
+                                                            releaseDragAndDropPermission
+                                                        )
+                                                        return true
+                                                    }
+                                                }
+                                            }),
                                     shape = RoundedCornerShape(8.dp),
-                                )
-                                .dragAndDropTarget(
-                                    shouldStartDragAndDrop = { event ->
-                                        event.mimeTypes().any { it.startsWith("image/") }
-                                    },
-                                    target = remember {
-                                        object : DragAndDropTarget {
-                                            override fun onStarted(event: DragAndDropEvent) {}
-
-                                            override fun onEntered(event: DragAndDropEvent) {
-                                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
-                                                val press = PressInteraction.Press(Offset.Zero)
-                                                dragPress.value = press
-                                                addButtonInteractionSource.tryEmit(press)
-                                            }
-
-                                            override fun onExited(event: DragAndDropEvent) {
-                                                dragPress.value?.let {
-                                                    addButtonInteractionSource.tryEmit(
-                                                        PressInteraction.Cancel(it)
-                                                    )
-                                                }
-                                                dragPress.value = null
-                                            }
-
-                                            override fun onEnded(event: DragAndDropEvent) {
-                                                dragPress.value?.let {
-                                                    addButtonInteractionSource.tryEmit(
-                                                        PressInteraction.Release(it)
-                                                    )
-                                                }
-                                                dragPress.value = null
-                                            }
-
-                                            override fun onDrop(event: DragAndDropEvent): Boolean {
-                                                requestDragAndDropPermission(event.toAndroidDragEvent())
-                                                val clipData = event
-                                                    .toAndroidDragEvent()
-                                                    .clipData ?: return false
-                                                viewModel.addPicturesFromClipData(
-                                                    context,
-                                                    clipData,
-                                                    PDFName,
-                                                    releaseDragAndDropPermission
-                                                )
-                                                return true
-                                            }
-                                        }
-                                    }),
-                            shape = RoundedCornerShape(8.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                contentColor = MaterialTheme.colorScheme.secondary
-                            ),
-                            onClick = {
-                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
-                                onImportPicture(PDFName)
-                            }
-                        ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_add),
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.secondary,
-                                    modifier = Modifier.size(itemWidth / 3)
-                                )
-                                Text(text = stringResource(R.string.add))
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                        contentColor = MaterialTheme.colorScheme.secondary
+                                    ),
+                                    onClick = {
+                                        HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
+                                        onImportPicture(PDFName)
+                                    }
+                                ) {
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(R.drawable.ic_add),
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.secondary,
+                                            modifier = Modifier.size(itemWidth / 3)
+                                        )
+                                        Text(text = stringResource(R.string.add))
+                                    }
+                                }
                             }
                         }
+
+                        ControlMode.CONFIG -> Column(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = "输出PDF设置",
+                                modifier = Modifier.padding(
+                                    start = 12.dp,
+                                    end = 12.dp,
+                                    bottom = 12.dp
+                                ),
+                                fontWeight = FontWeight.Bold
+                            )
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(
+                                        start = 12.dp,
+                                        end = 12.dp,
+                                    )
+                            ) {
+                                Text(
+                                    text = "输出PDF的文件名"
+                                )
+                                PDFName.let {
+                                    OutlinedTextField(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        value = newPDFName,
+                                        onValueChange = {
+                                            HapticManager.vibrate(
+                                                context,
+                                                HapticManager.EFFECT_TICK
+                                            )
+                                            newPDFName = it
+                                            isError = newPDFName.isBlank()
+                                        },
+                                        supportingText = {
+                                            if (isError) {
+                                                Text(
+                                                    text = "PDF名称不能为空",
+                                                    color = MaterialTheme.colorScheme.error
+                                                )
+                                            }
+                                        },
+                                        isError = isError,
+                                        label = {
+                                            Text("")
+                                        },
+                                        singleLine = true
+                                    )
+                                }
+                                TextButton(
+                                    modifier = Modifier.align(Alignment.End),
+                                    enabled = newPDFName.isNotBlank(),
+                                    onClick = {
+                                        HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
+                                        if (newPDFName.isNotBlank()) {
+                                            val finalName = onPDFNameChange(PDFName, newPDFName)
+                                            newPDFName = finalName.dropLast(4)
+                                        }
+                                    },
+                                    colors = ButtonDefaults.textButtonColors(
+                                        containerColor = MaterialTheme.colorScheme.primary,
+                                        //disabledContentColor = MaterialTheme.colorScheme.surfaceVariant,
+                                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                                    )
+                                ) {
+                                    Text(stringResource(R.string.apply))
+                                }
+                                Spacer(modifier = Modifier.height(12.dp))
+                                //HorizontalDivider()
+                            }
+                        }
+
+                        ControlMode.DELETE -> Column(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = "删除此项？",
+                                modifier = Modifier.padding(
+                                    start = 12.dp,
+                                    end = 12.dp,
+                                    bottom = 12.dp
+                                ),
+                                fontWeight = FontWeight.Bold
+                            )
+                            Column(
+                                modifier = Modifier.fillMaxWidth()
+                                    .padding(12.dp)
+                            ){
+                                Text("此操作不可撤销。")
+                                TextButton(
+                                    modifier = Modifier.align(Alignment.End),
+                                    onClick = {
+                                        HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
+                                        viewModel.deletePicturesGroup(PDFName)
+                                    },
+                                    colors = ButtonDefaults.textButtonColors(
+                                        containerColor = MaterialTheme.colorScheme.error,
+                                        contentColor = MaterialTheme.colorScheme.onError,
+                                    )
+                                ) {
+                                    Text(stringResource(R.string.ok))
+                                }
+                            }
+                        }
+                        else -> {}
                     }
                 }
-            }
-            if (isDeleteDialogShow) {
-                AlertDialog(
-                    onDismissRequest = { isDeleteDialogShow = false },
-                    title = {
-                        Text(
-                            text = "删除此项？"
-                        )
-                    },
-                    text = {
-                        Column {
-                            Text(
-                                text = "此操作不可撤销。",
-                            )
-                        }
-                    },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                HapticManager.vibrate(context, HapticManager.EFFECT_HEAVY_CLICK)
-                                isDeleteDialogShow = false
-                                viewModel.deletePicturesGroup(PDFName)
-                            },
-                            colors = ButtonDefaults.textButtonColors(
-                                contentColor = MaterialTheme.colorScheme.error
-                            )
-                        ) {
-                            Text(
-                                text = stringResource(R.string.ok)
-                            )
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(
-                            onClick = {
-                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
-                                isDeleteDialogShow = false
-                            }
-                        ) {
-                            Text(stringResource(R.string.cancel))
-                        }
-                    }
-                )
-            }
-            if (isChangeNameDialogShow) {
-                AlertDialog(
-                    onDismissRequest = { },
-                    title = { Text("请输入将要输出的PDF名") },
-                    text = {
-                        Column {
-                            PDFName.let {
-                                OutlinedTextField(
-                                    value = newPDFName,
-                                    onValueChange = {
-                                        HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
-                                        newPDFName = it
-                                        isError = newPDFName.isBlank()
-                                    },
-                                    supportingText = {
-                                        if (isError) {
-                                            Text(
-                                                text = "PDF名称不能为空",
-                                                color = MaterialTheme.colorScheme.error
-                                            )
-                                        }
-                                    },
-                                    isError = isError,
-                                    label = {
-                                        Text("")
-                                    },
-                                    singleLine = false
-                                )
-                            }
-                        }
-                    },
-                    confirmButton = {
-                        TextButton(
-                            enabled = newPDFName.isNotBlank(),
-                            onClick = {
-                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
-                                if (newPDFName.isNotBlank()) {
-                                    isChangeNameDialogShow = false
-                                    val finalName = onPDFNameChange(PDFName, newPDFName)
-                                    newPDFName = finalName.dropLast(4)
-                                }
-                            }) {
-                            Text(stringResource(R.string.ok))
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(
-                            onClick = {
-                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
-                                isChangeNameDialogShow = false
-                            }
-                        ) {
-                            Text(stringResource(R.string.cancel))
-                        }
-                    }
-                )
             }
         }
     }

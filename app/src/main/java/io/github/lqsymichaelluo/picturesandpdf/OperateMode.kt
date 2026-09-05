@@ -4,5 +4,6 @@ enum class OperateMode {
     NONE,
     SCALE,
     PALETTE,
-    PAGE
+    PAGE,
+    DELETE
 }

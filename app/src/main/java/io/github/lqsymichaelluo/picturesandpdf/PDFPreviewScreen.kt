@@ -134,7 +134,8 @@ fun PDFPreviewScreen(
         ){
             PdfViewer(
                 file = file,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
+                onBack = onBack
             )
         }
     }

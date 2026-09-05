@@ -17,6 +17,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.draganddrop.dragAndDropTarget
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
@@ -58,6 +59,7 @@ import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
@@ -72,10 +74,14 @@ import androidx.compose.ui.draganddrop.mimeTypes
 import androidx.compose.ui.draganddrop.toAndroidDragEvent
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -121,7 +127,7 @@ fun ImageSortingScreen(
         targetValue = if (receivingDrag)
             MaterialTheme.colorScheme.secondaryContainer
         else
-            MaterialTheme.colorScheme.surface,
+            Color.Transparent,
         label = "containerColor"
     )
     val contentColor by animateColorAsState(
@@ -133,12 +139,42 @@ fun ImageSortingScreen(
     )
     val importButtonInteractionSource = remember { MutableInteractionSource() }
     val dragPress = remember { mutableStateOf<PressInteraction.Press?>(null) }
+    val focusRequester = remember { FocusRequester() }
 
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
     DisposableEffect(Unit) {
         onDispose { ThumbnailCache.trimToHalf() }
     }
 
     Scaffold(
+        modifier = Modifier.focusRequester(focusRequester)
+            .focusable()
+            .onPreviewKeyEvent { event ->
+                if (
+                    event.matches(key = Key.B, ctrl = true)
+                    || event.matches(key = Key.Backspace)
+                ) {
+                    onBack()
+                    true
+                } else if (
+                    event.matches(key = Key.LeftBracket, ctrl = true)
+                ) {
+                    scale = (scale * 0.8f).coerceIn(0.45f, 2f)
+                    true
+                } else if (
+                    event.matches(key = Key.RightBracket, ctrl = true)
+                ) {
+                    scale = (scale * 1.25f).coerceIn(0.45f, 2f)
+                    if (scale == 2f) {
+                        onBack()
+                    }
+                    true
+                } else {
+                    false
+                }
+            },
         topBar = {
             TopAppBar(
                 title = { Text("图片排序") },

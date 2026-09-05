@@ -50,15 +50,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val _foldMap = mutableMapOf<String, MutableState<Boolean>>()
     private val _rotationMap = mutableMapOf<String, MutableState<Float>>()
     private val _newNameMap = mutableMapOf<String, MutableState<String>>()
+    private val _controlModeMap = mutableMapOf<String, MutableState<ControlMode>>()
     private val _operateModeMap = mutableMapOf<String, MutableState<OperateMode>>()
     private val _hueMap = mutableStateMapOf<String, MutableState<Float>>()
     private val _saturationMap = mutableStateMapOf<String, MutableState<Float>>()
     private val _valueMap = mutableStateMapOf<String, MutableState<Float>>()
     private val _alphaMap = mutableStateMapOf<String, MutableState<Float>>()
     private val _colorInputDialogMap = mutableStateMapOf<String, MutableState<Boolean>>()
-    private val _changeNameDialogMap = mutableStateMapOf<String, MutableState<Boolean>>()
-    private val _deletePicturesDialogMap = mutableStateMapOf<String, MutableState<Boolean>>()
-    private val _deletePDFDialogMap = mutableStateMapOf<String, MutableState<Boolean>>()
     private val _isExporting = MutableStateFlow(false)
     val isExporting: StateFlow<Boolean> = _isExporting
     private val _exportText = MutableStateFlow("正在输出...")
@@ -94,14 +92,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun deletePictureButtonShowState(imageId: Int): MutableState<Boolean> =
         _deletePictureButtonShowMap.getOrPut(imageId) { mutableStateOf(false) }
 
-    fun foldState(pdfName: String): MutableState<Boolean> =
-        _foldMap.getOrPut(pdfName) { mutableStateOf(false) }
-
     fun rotationState(pdfName: String): MutableState<Float> =
         _rotationMap.getOrPut(pdfName) { mutableFloatStateOf(0f) }
 
     fun newNameState(pdfName: String): MutableState<String> =
         _newNameMap.getOrPut(pdfName) { mutableStateOf(pdfName.dropLast(4)) }
+
+    fun controlModeState(pdfName: String): MutableState<ControlMode> =
+        _controlModeMap.getOrPut(pdfName) { mutableStateOf(ControlMode.SHOW) }
 
     fun operateModeState(pdfName: String): MutableState<OperateMode> =
         _operateModeMap.getOrPut(pdfName) { mutableStateOf(OperateMode.NONE) }
@@ -120,15 +118,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun colorInputDialogShowState(pdfName: String): MutableState<Boolean> =
         _colorInputDialogMap.getOrPut(pdfName) { mutableStateOf(false) }
-
-    fun changeNameDialogShowState(pdfName: String): MutableState<Boolean> =
-        _changeNameDialogMap.getOrPut(pdfName) { mutableStateOf(false) }
-
-    fun deletePicturesDialogShowState(pdfName: String): MutableState<Boolean> =
-        _deletePicturesDialogMap.getOrPut(pdfName) { mutableStateOf(false) }
-
-    fun deletePDFDialogShowState(pdfName: String): MutableState<Boolean> =
-        _deletePDFDialogMap.getOrPut(pdfName) { mutableStateOf(false) }
 
     fun setScale(name: String, scale: Float) {
         pdfInputList[name] = pdfInputList[name]?.copy(scale = scale) as PicturesOutputState
@@ -356,11 +345,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             index++
         }
         pictureInputList["$finalName.pdf"] = list
-        foldState("$finalName.pdf").value = foldState(oldName).value
+        controlModeState("$finalName.pdf").value = controlModeState(oldName).value
         rotationState("$finalName.pdf").value = rotationState(oldName).value
         _foldMap.remove(oldName)
-        _changeNameDialogMap.remove(oldName)
-        _deletePicturesDialogMap.remove(oldName)
+        _controlModeMap.remove(oldName)
         return "$finalName.pdf"
     }
 

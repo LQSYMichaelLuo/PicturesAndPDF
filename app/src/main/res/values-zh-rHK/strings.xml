@@ -13,4 +13,5 @@
     <string name="dragtip">拖曳至此處</string>
     <string name="ok">確認</string>
     <string name="cancel">取消</string>
+    <string name="apply">應用</string>
 </resources>

@@ -6,6 +6,7 @@ import android.os.VibrationEffect
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -32,6 +33,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -41,11 +43,15 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
@@ -71,7 +77,9 @@ fun ImagePreviewScreen(
 ) {
     val context = LocalContext.current
     val imageID = "image_$currentIndex"
+    val scope = rememberCoroutineScope()
     var colorState by imagePreviewViewModel.imagePreviewBackgroundColorState(imageID)
+    val bitmapList = imagePreviewViewModel.imagePreviewList[pdfName]?.bitmapList
     val containerColor by animateColorAsState(
         targetValue = when (colorState) {
             ImagePreviewBackgroundColorState.Gray -> Color.Gray
@@ -91,8 +99,114 @@ fun ImagePreviewScreen(
     DisposableEffect(Unit) {
         onDispose { PreviewBitmapCache.trimToHalf() }
     }
+    val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
+    val pagerState = rememberPagerState(
+        initialPage = currentIndex,
+        pageCount = { bitmapList!!.size }
+    )
+
+    val pageScales = remember { mutableMapOf<Int, Animatable<Float, *>>() }
+    val pageOffsets = remember { mutableStateMapOf<Int, Pair<Float, Float>>() }
+
+    fun getScale(page: Int) = pageScales.getOrPut(page) { Animatable(1f) }
+    fun getOffset(page: Int) = pageOffsets.getOrPut(page) { 0f to 0f }
 
     Scaffold(
+        modifier = Modifier
+            .focusRequester(focusRequester)
+            .focusable()
+            .onPreviewKeyEvent { event ->
+                val currentPage = pagerState.currentPage
+                val currentScale = getScale(currentPage)
+                val (currentOffsetX, currentOffsetY) = getOffset(currentPage)
+                val step = 100f
+
+                val isZoomed = currentScale.value > 1.14f
+
+                when {
+                    event.matches(
+                        key = Key.B,
+                        ctrl = true
+                    ) || event.matches(key = Key.Backspace) -> {
+                        onBack()
+                        true
+                    }
+
+                    event.matches(key = Key.DirectionLeft) -> {
+                        if (isZoomed) {
+                            HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
+                            pageOffsets[currentPage] = (currentOffsetX + step) to currentOffsetY
+                        } else {
+                            scope.launch { pagerState.animateScrollToPage(currentPage - 1) }
+                        }
+                        true
+                    }
+
+                    event.matches(key = Key.DirectionRight) -> {
+                        if (isZoomed) {
+                            HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
+                            pageOffsets[currentPage] = (currentOffsetX - step) to currentOffsetY
+                        } else {
+                            scope.launch { pagerState.animateScrollToPage(currentPage + 1) }
+                        }
+                        true
+                    }
+
+                    event.matches(key = Key.DirectionDown) -> {
+                        if (isZoomed) {
+                            HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
+                            pageOffsets[currentPage] = currentOffsetX to (currentOffsetY - step)
+                        }
+                        true
+                    }
+
+                    event.matches(key = Key.DirectionUp) -> {
+                        if (isZoomed) {
+                            HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
+                            pageOffsets[currentPage] = currentOffsetX to (currentOffsetY + step)
+                        }
+                        true
+                    }
+
+                    event.matches(key = Key.RightBracket, ctrl = true) -> {
+                        HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
+                        scope.launch {
+                            val target = (currentScale.value * 1.25f).fastCoerceIn(0.6f, 35f)
+                            currentScale.animateTo(target)
+                        }
+                        true
+                    }
+
+                    event.matches(key = Key.LeftBracket, ctrl = true) -> {
+                        HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
+                        scope.launch {
+                            val target = (currentScale.value * 0.8f).fastCoerceIn(0.6f, 35f)
+                            currentScale.animateTo(target)
+                            if (currentScale.value <= 1.05f) {
+                                pageOffsets[currentPage] = 0f to 0f
+                            }
+                        }
+                        if (currentScale.value <= 0.65f) {
+                            if (!imagePreviewViewModel.imagePreviewList[pdfName]!!.hasTriggeredSort) {
+                                imagePreviewViewModel.setTriggerSort(pdfName, triggered = true)
+                                navController.navigate("image_sorting/$pdfName")
+                                imagePreviewViewModel.setTriggerPreview(
+                                    pdfName = pdfName,
+                                    triggered = false
+                                )
+                            }
+                        }
+                        true
+                    }
+
+                    else -> false
+                }
+            },
+
         containerColor = containerColor,
         topBar = {
             TopAppBar(
@@ -120,6 +234,20 @@ fun ImagePreviewScreen(
                     }
                 },
                 actions = {
+                    TooltipBox(
+                        positionProvider = rememberTooltipPositionProvider(
+                            TooltipAnchorPosition.Below
+                        ),
+                        tooltip = {
+                            PlainTooltip { Text("缩放程度") }
+                        },
+                        state = rememberTooltipState()
+                    ) {
+                        Text(
+                            "%.0f%%  ".format(getScale(pagerState.currentPage).value * 100),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                     TooltipBox(
                         positionProvider = rememberTooltipPositionProvider(
                             TooltipAnchorPosition.Below
@@ -181,24 +309,25 @@ fun ImagePreviewScreen(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            val bitmapList = imagePreviewViewModel.imagePreviewList[pdfName]?.bitmapList
             if (bitmapList != null) {
                 var currentPageScale by remember { mutableFloatStateOf(1f) }
-
-                val pagerState = rememberPagerState(
-                    initialPage = currentIndex,
-                    pageCount = { bitmapList.size }
-                )
 
                 HorizontalPager(
                     state = pagerState,
                     modifier = Modifier.fillMaxSize(),
                     key = { System.identityHashCode(bitmapList[it]) },
-                    userScrollEnabled = currentPageScale <= 1.05f
+                    userScrollEnabled = getScale(pagerState.currentPage).value <= 1.14f
                 ) { page ->
+                    val scale = getScale(page)
+                    val (offsetX, offsetY) = getOffset(page)
+
                     PreviewPage(
                         source = bitmapList[page],
                         modifier = Modifier.fillMaxSize(),
+                        scale = scale,
+                        offsetX = offsetX,
+                        offsetY = offsetY,
+                        onOffsetChange = { x, y -> pageOffsets[page] = x to y },
                         onScaleChanged = { newScale ->
                             HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
                             if (page == pagerState.currentPage) {
@@ -207,10 +336,7 @@ fun ImagePreviewScreen(
                         },
                         onPinchClosed = {
                             if (!imagePreviewViewModel.imagePreviewList[pdfName]!!.hasTriggeredSort) {
-                                imagePreviewViewModel.setTriggerSort(
-                                    pdfName,
-                                    triggered = true
-                                )
+                                imagePreviewViewModel.setTriggerSort(pdfName, triggered = true)
                                 navController.navigate("image_sorting/$pdfName")
                                 imagePreviewViewModel.setTriggerPreview(
                                     pdfName = pdfName,
@@ -220,6 +346,7 @@ fun ImagePreviewScreen(
                         }
                     )
                 }
+
             }
         }
     }
@@ -258,17 +385,19 @@ fun calculateOffsetLimit(
 fun PreviewPage(
     source: Bitmap,
     modifier: Modifier = Modifier,
+    scale: Animatable<Float, *>,
+    offsetX: Float,
+    offsetY: Float,
+    onOffsetChange: (Float, Float) -> Unit,
     onScaleChanged: (Float) -> Unit = {},
     onPinchClosed: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val scale = remember { Animatable(1f) }
-    var offsetX by remember { mutableFloatStateOf(0f) }
-    var offsetY by remember { mutableFloatStateOf(0f) }
-    var containerSize by remember { mutableStateOf(IntSize.Zero) }
-    var snapping by remember { mutableStateOf(false) }
 
+    val offsetXState = rememberUpdatedState(offsetX)
+    val offsetYState = rememberUpdatedState(offsetY)
+    val onOffsetChangeState = rememberUpdatedState(onOffsetChange)
     val onScaleChangedState = rememberUpdatedState(onScaleChanged)
     val onPinchClosedState = rememberUpdatedState(onPinchClosed)
 
@@ -277,6 +406,8 @@ fun PreviewPage(
     }
 
     val imageSize = remember(source) { IntSize(source.width, source.height) }
+    var containerSize by remember { mutableStateOf(IntSize.Zero) }
+    var snapping by remember { mutableStateOf(false) }
 
     var ready by remember(source) {
         mutableStateOf(
@@ -299,6 +430,21 @@ fun PreviewPage(
     val containerState = rememberUpdatedState(containerSize)
     val imageSizeState = rememberUpdatedState(imageSize)
 
+    LaunchedEffect(offsetX, offsetY, scale.value, containerSize) {
+        if (containerSize != IntSize.Zero && scale.value > 1f) {
+            val limit = calculateOffsetLimit(
+                scale = scale.value,
+                container = containerSize,
+                image = imageSize
+            )
+            val clampedX = offsetX.fastCoerceIn(-limit.x, limit.x)
+            val clampedY = offsetY.fastCoerceIn(-limit.y, limit.y)
+            if (clampedX != offsetX || clampedY != offsetY) {
+                onOffsetChange(clampedX, clampedY)
+            }
+        }
+    }
+
     Box(
         modifier = modifier
             .onSizeChanged { containerSize = it }
@@ -307,7 +453,6 @@ fun PreviewPage(
                 awaitPointerEventScope {
                     while (true) {
                         var isScaling = false
-
                         do {
                             val event = awaitPointerEvent()
                             val zoomChange = event.calculateZoom()
@@ -315,8 +460,7 @@ fun PreviewPage(
 
                             if (zoomChange != 1f) {
                                 isScaling = true
-                                val target =
-                                    (scale.value * zoomChange).fastCoerceIn(0.6f, 35f)
+                                val target = (scale.value * zoomChange).fastCoerceIn(0.6f, 35f)
                                 if (!snapping) {
                                     snapping = true
                                     scope.launch {
@@ -329,9 +473,7 @@ fun PreviewPage(
                                 }
                             }
 
-                            if (scale.value <= 0.65f) {
-                                onPinchClosedState.value()
-                            }
+                            if (scale.value <= 0.65f) onPinchClosedState.value()
 
                             if (scale.value > 1f || isScaling) {
                                 val limit = calculateOffsetLimit(
@@ -339,10 +481,9 @@ fun PreviewPage(
                                     container = containerState.value,
                                     image = imageSizeState.value
                                 )
-                                offsetX =
-                                    (offsetX + panChange.x).fastCoerceIn(-limit.x, limit.x)
-                                offsetY =
-                                    (offsetY + panChange.y).fastCoerceIn(-limit.y, limit.y)
+                                val newX = (offsetXState.value + panChange.x).fastCoerceIn(-limit.x, limit.x)
+                                val newY = (offsetYState.value + panChange.y).fastCoerceIn(-limit.y, limit.y)
+                                onOffsetChangeState.value(newX, newY)
                                 event.changes.forEach { it.consume() }
                             } else {
                                 if (panChange.y.absoluteValue > panChange.x.absoluteValue) {
@@ -356,8 +497,10 @@ fun PreviewPage(
                             container = containerState.value,
                             image = imageSizeState.value
                         )
-                        offsetX = offsetX.fastCoerceIn(-limit.x, limit.x)
-                        offsetY = offsetY.fastCoerceIn(-limit.y, limit.y)
+                        onOffsetChangeState.value(
+                            offsetXState.value.fastCoerceIn(-limit.x, limit.x),
+                            offsetYState.value.fastCoerceIn(-limit.y, limit.y)
+                        )
                     }
                 }
             }
@@ -368,10 +511,7 @@ fun PreviewPage(
                         scope.launch {
                             val target = if (scale.value != 1f) 1f else 2.5f
                             scale.animateTo(target)
-                            if (target == 1f) {
-                                offsetX = 0f
-                                offsetY = 0f
-                            }
+                            if (target == 1f) onOffsetChangeState.value(0f, 0f)
                         }
                     }
                 )
@@ -394,7 +534,6 @@ fun PreviewPage(
                         )
                 )
             }
-
             failed -> {
                 Image(
                     painter = painterResource(R.drawable.ic_error),
@@ -403,10 +542,7 @@ fun PreviewPage(
                     modifier = Modifier.fillMaxSize(),
                 )
             }
-
-            else -> {
-                LoadingIndicator()
-            }
+            else -> LoadingIndicator()
         }
     }
 }

@@ -10,6 +10,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
@@ -43,8 +45,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
@@ -187,7 +193,8 @@ fun rememberPdfRenderState(file: File): PdfRenderState {
 fun PdfViewer(
     file: File,
     modifier: Modifier = Modifier,
-    indicatorDismissDelay: Long = 1500L
+    indicatorDismissDelay: Long = 1500L,
+    onBack: () -> Unit
 ) {
     val state = rememberPdfRenderState(file)
     val density = LocalDensity.current
@@ -269,13 +276,53 @@ fun PdfViewer(
         }
     }
     val overlayVisible = !idle || draggingScrollbar
+    val focusRequester = remember { FocusRequester() }
 
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
+    val stepPx = with(density){
+        80.dp.toPx()
+    }
     Box(
         modifier = modifier
             .fillMaxSize()
             .onSizeChanged {
                 viewportWidthPx = it.width
                 viewportHeightPx = it.height
+            }.focusRequester(focusRequester)
+            .focusable()
+            .onPreviewKeyEvent { event ->
+                if (
+                    event.matches(key = Key.B, ctrl = true)
+                    || event.matches(key = Key.Backspace)
+                ) {
+                    onBack()
+                    true
+                } else if (
+                    event.matches(key = Key.DirectionUp)
+                ){
+                   scope.launch {
+                       listState.animateScrollBy(-stepPx, tween(durationMillis = 220))
+                   }
+                   true
+                } else if (
+                    event.matches(key = Key.DirectionDown)
+                ){
+                   scope.launch {
+                       listState.animateScrollBy(stepPx, tween(durationMillis = 220))
+                   }
+                    true
+                } else if (
+                    event.matches(key = Key.Spacebar)
+                ){
+                   scope.launch {
+                       listState.animateScrollBy(stepPx * 8, tween(durationMillis = 220))
+                   }
+                    true
+                } else {
+                    false
+                }
             }
     ) {
         LazyColumn(

@@ -172,15 +172,15 @@ fun PDFCard(
     val interactionSource = remember { MutableInteractionSource() }
     val topColors = viewModel.topColors
 
-    var isDeleteDialogShow by viewModel.deletePDFDialogShowState(pdfName)
-
     val containerColor by animateColorAsState(
         targetValue = if (operateMode == OperateMode.SCALE) MaterialTheme.colorScheme.primary else Color.Transparent
     )
     val contentColor by animateColorAsState(
         targetValue = if (operateMode == OperateMode.SCALE) MaterialTheme.colorScheme.onPrimary else CardDefaults.cardColors().contentColor
     )
-
+    val errorColor by animateColorAsState(
+        targetValue = if (operateMode == OperateMode.DELETE) MaterialTheme.colorScheme.error else CardDefaults.cardColors().contentColor
+    )
     fun toggleMode(target: OperateMode) {
         operateMode = if (operateMode == target) OperateMode.NONE else target
     }
@@ -325,18 +325,19 @@ fun PDFCard(
                         positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
                             TooltipAnchorPosition.Above
                         ),
-                        tooltip = { PlainTooltip { Text("删除这个图片组") } },
+                        tooltip = { PlainTooltip { Text("删除该PDF项目") } },
                         state = deleteTooltipState,
                     ) {
                         IconButton(
                             onClick = {
                                 HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
-                                isDeleteDialogShow = true
+                                toggleMode(OperateMode.DELETE)
                             }
                         ) {
                             Icon(
                                 painter = painterResource(R.drawable.ic_delete),
-                                contentDescription = null
+                                contentDescription = null,
+                                tint = errorColor
                             )
                         }
                     }
@@ -367,7 +368,7 @@ fun PDFCard(
                                     HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
                                     viewModel.setScale(pdfName, it)
                                 },
-                                valueRange = 1f..6f,
+                                valueRange = 1f..8f,
                                 modifier = Modifier.padding(8.dp)
                             )
                             Text(
@@ -822,7 +823,36 @@ fun PDFCard(
                                 modifier = Modifier.height(12.dp)
                             )
                         }
-
+                        OperateMode.DELETE -> Column(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = "删除此项？",
+                                modifier = Modifier.padding(
+                                    12.dp
+                                ),
+                                fontWeight = FontWeight.Bold
+                            )
+                            Column(
+                                modifier = Modifier.fillMaxWidth()
+                                    .padding(12.dp)
+                            ){
+                                Text("此操作不可撤销。")
+                                TextButton(
+                                    modifier = Modifier.align(Alignment.End),
+                                    onClick = {
+                                        HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
+                                        viewModel.deletePDF(pdfName)
+                                    },
+                                    colors = ButtonDefaults.textButtonColors(
+                                        containerColor = MaterialTheme.colorScheme.error,
+                                        contentColor = MaterialTheme.colorScheme.onError,
+                                    )
+                                ) {
+                                    Text(stringResource(R.string.ok))
+                                }
+                            }
+                        }
                         else -> {}
                     }
                 }
@@ -1017,49 +1047,6 @@ fun PDFCard(
                             HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
                             isColorInputDialogShow = false
                         }) {
-                            Text(stringResource(R.string.cancel))
-                        }
-                    }
-                )
-            }
-            if (isDeleteDialogShow) {
-                AlertDialog(
-                    onDismissRequest = { isDeleteDialogShow = false },
-                    title = {
-                        Text(
-                            text = "删除此项？"
-                        )
-                    },
-                    text = {
-                        Column {
-                            Text(
-                                text = "此操作不可撤销。",
-                            )
-                        }
-                    },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                HapticManager.vibrate(context, HapticManager.EFFECT_HEAVY_CLICK)
-                                isDeleteDialogShow = false
-                                viewModel.deletePDF(pdfName)
-                            },
-                            colors = ButtonDefaults.textButtonColors(
-                                contentColor = MaterialTheme.colorScheme.error
-                            )
-                        ) {
-                            Text(
-                                text = stringResource(R.string.ok)
-                            )
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(
-                            onClick = {
-                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
-                                isDeleteDialogShow = false
-                            }
-                        ) {
                             Text(stringResource(R.string.cancel))
                         }
                     }

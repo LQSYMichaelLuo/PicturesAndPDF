@@ -12,4 +12,5 @@
     <string name="dragtip">Drag here</string>
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
+    <string name="apply">Apply</string>
 </resources>
