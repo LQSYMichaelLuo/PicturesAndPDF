@@ -26,7 +26,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -181,6 +182,7 @@ fun rememberPdfRenderState(file: File): PdfRenderState {
     return state
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun PdfViewer(
     file: File,
@@ -199,7 +201,7 @@ fun PdfViewer(
 
     if (state.pageCount == 0 || state.pageHeights.isEmpty()) {
         Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
+            LoadingIndicator()
         }
         return
     }
@@ -401,6 +403,7 @@ private fun PdfFastScrollbar(
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun PdfPage(
     state: PdfRenderState,
@@ -434,7 +437,7 @@ private fun PdfPage(
             modifier = Modifier.fillMaxWidth().height(heightDp),
             contentAlignment = Alignment.Center
         ) {
-            CircularProgressIndicator(modifier = Modifier.padding(48.dp))
+            LoadingIndicator(modifier = Modifier.padding(48.dp))
         }
     }
 }

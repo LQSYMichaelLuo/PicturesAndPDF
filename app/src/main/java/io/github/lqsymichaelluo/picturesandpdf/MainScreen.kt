@@ -33,7 +33,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -69,6 +71,7 @@ import androidx.compose.ui.draganddrop.DragAndDropTarget
 import androidx.compose.ui.draganddrop.mimeTypes
 import androidx.compose.ui.draganddrop.toAndroidDragEvent
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
@@ -86,10 +89,12 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.wear.compose.material3.CircularProgressIndicator
 
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveApi::class)
+@OptIn(
+    ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveApi::class,
+    ExperimentalMaterial3ExpressiveApi::class
+)
 @Composable
 fun MainScreen(
     rootNavController: NavHostController,
@@ -111,9 +116,6 @@ fun MainScreen(
     val context = LocalContext.current
     val density = LocalDensity.current
     val haptics = LocalHapticFeedback.current
-    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(
-        rememberTopAppBarState()
-    )
     val adaptiveInfo = currentWindowAdaptiveInfo()
     val width = adaptiveInfo.windowSizeClass.widthSizeClass
     val height = adaptiveInfo.windowSizeClass.heightSizeClass
@@ -132,7 +134,7 @@ fun MainScreen(
         targetValue = if (receivingDrag)
             MaterialTheme.colorScheme.secondaryContainer
         else
-            MaterialTheme.colorScheme.surface,
+            Color.Transparent,
         label = "containerColor"
     )
     val contentColor by animateColorAsState(
@@ -144,16 +146,26 @@ fun MainScreen(
     )
     val importButtonInteractionSource = remember { MutableInteractionSource() }
     val dragPress = remember { mutableStateOf<PressInteraction.Press?>(null) }
-
+    val topAppBarScrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(
+        rememberTopAppBarState()
+    )
+    val phoneLandscapeTopAppBarScrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(
+        rememberTopAppBarState()
+    )
     if (isPhoneLandscape)
         Scaffold(
+            modifier = Modifier.nestedScroll(phoneLandscapeTopAppBarScrollBehavior.nestedScrollConnection),
             topBar = {
                 TopAppBar(
-                    expandedHeight = titleHeight + 12.dp,
-                    modifier = Modifier.padding(bottom = 8.dp),
+                    expandedHeight = titleHeight + 16.dp,
+                    scrollBehavior = phoneLandscapeTopAppBarScrollBehavior,
                     title = {
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(
+                                    start = 96.dp
+                                ),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -183,10 +195,7 @@ fun MainScreen(
                                 }
                         }
                     },
-
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                    ),
+                    colors = TopAppBarDefaults.topAppBarColors(),
                     actions = {
                         TooltipBox(
                             positionProvider = rememberTooltipPositionProvider(
@@ -343,18 +352,27 @@ fun MainScreen(
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             if (isExporting) {
-                                                CircularProgressIndicator(
-                                                    modifier = Modifier.size(28.dp)
+                                                CircularWavyProgressIndicator(
+                                                    modifier = Modifier.size(46.dp),
                                                 )
-                                                Spacer(Modifier.width(12.dp))
+                                                Spacer(Modifier.width(26.dp))
                                             }
-                                            Text(exportText)
+                                            Text(
+                                                text = exportText,
+                                                style = MaterialTheme.typography.bodyLarge
+                                            )
                                         }
                                     },
                                     confirmButton = {
                                         TextButton(
                                             enabled = !isExporting,
-                                            onClick = viewModel::dismissExportDialog
+                                            onClick = {
+                                                HapticManager.vibrate(
+                                                    context,
+                                                    HapticManager.EFFECT_CLICK
+                                                )
+                                                viewModel.dismissExportDialog()
+                                            }
                                         ) {
                                             Text(stringResource(R.string.ok))
                                         }
@@ -439,9 +457,10 @@ fun MainScreen(
         Scaffold(
             modifier = Modifier
                 .fillMaxSize()
-                .nestedScroll(scrollBehavior.nestedScrollConnection),
+                .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection),
             topBar = {
                 TopAppBar(
+                    scrollBehavior = topAppBarScrollBehavior,
                     title = {
                         Column {
                             Text(text = stringResource(R.string.app_name))
@@ -452,11 +471,7 @@ fun MainScreen(
                             )
                         }
                     },
-                    //scrollBehavior = scrollBehavior,
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        //scrolledContainerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(6.dp)
-                    ),
+                    colors = TopAppBarDefaults.topAppBarColors(),
                     actions = {
                         val density = LocalDensity.current
                         val context = LocalContext.current
@@ -616,12 +631,15 @@ fun MainScreen(
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             if (isExporting) {
-                                                CircularProgressIndicator(
-                                                    modifier = Modifier.size(28.dp)
+                                                CircularWavyProgressIndicator(
+                                                    modifier = Modifier.size(46.dp),
                                                 )
-                                                Spacer(Modifier.width(12.dp))
+                                                Spacer(Modifier.width(26.dp))
                                             }
-                                            Text(exportText)
+                                            Text(
+                                                text = exportText,
+                                                style = MaterialTheme.typography.bodyLarge
+                                            )
                                         }
                                     },
                                     confirmButton = {
@@ -632,7 +650,7 @@ fun MainScreen(
                                                     context,
                                                     HapticManager.EFFECT_CLICK
                                                 )
-                                                viewModel::dismissExportDialog
+                                                viewModel.dismissExportDialog()
                                             }
                                         ) {
                                             Text(stringResource(R.string.ok))

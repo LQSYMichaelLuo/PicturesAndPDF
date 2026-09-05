@@ -39,10 +39,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PlainTooltip
@@ -86,7 +87,7 @@ import androidx.compose.ui.unit.dp
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyGridState
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ImageSortingScreen(
     pdfName: String = "unknown.pdf",
@@ -275,6 +276,10 @@ fun ImageSortingScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(
+                    start = 8.dp,
+                    end = 8.dp
+                )
                 .pointerInput(Unit) {
                     awaitPointerEventScope {
                         while (true) {
@@ -318,11 +323,7 @@ fun ImageSortingScreen(
                 columns = GridCells.Adaptive(minCellSize),
                 state = gridState,
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(
-                    start = 3.dp,
-                    top = padding.calculateTopPadding(),
-                    end = 3.dp
-                )
+                contentPadding = padding
             ) {
                 imagePreviewViewModel.imagePreviewList[pdfName]!!.bitmapList.let { list ->
                     items(list.size, key = {
@@ -385,6 +386,7 @@ fun ImageSortingScreen(
                                             interactionSource = null,
                                             indication = null,
                                         ) {
+                                            HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
                                             deletePictureButtonShow =
                                                 !deletePictureButtonShow
                                         }
@@ -398,7 +400,7 @@ fun ImageSortingScreen(
                                             modifier = cardModifier
                                         )
                                     } else {
-                                        CircularProgressIndicator()
+                                        LoadingIndicator()
                                     }
 
                                     CompositionLocalProvider(
@@ -431,6 +433,7 @@ fun ImageSortingScreen(
                                                         shape = CircleShape
                                                     ),
                                                 onClick = {
+                                                    HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
                                                     imagePreviewViewModel.deletePictureFromGroup(
                                                         pdfName = pdfName,
                                                         imagePreviewViewModel.imagePreviewList[pdfName]!!.bitmapList[index]
