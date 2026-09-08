@@ -77,4 +77,5 @@ dependencies {
     implementation(project(":shared"))
     implementation(libs.androidx.browser)
     implementation(libs.reorderable)
+    implementation(libs.pdfbox.android)
 }

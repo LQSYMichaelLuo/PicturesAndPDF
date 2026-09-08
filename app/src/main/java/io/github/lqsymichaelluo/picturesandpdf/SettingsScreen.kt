@@ -8,6 +8,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -22,9 +23,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -35,6 +38,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,11 +52,25 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
+
+private val KEYBOARD_SHORTCUTS = listOf(
+    ShortcutItem("一切返回操作", listOf("ESC")),
+    ShortcutItem("主页面切换页面", listOf("Ctrl", "P")),
+    ShortcutItem("主页面打开设置", listOf("Ctrl", "S")),
+    ShortcutItem("返回页面", listOf("Ctrl", "B")),
+    ShortcutItem("图片预览页缩小/图片排序页缩小", listOf("Ctrl", "[")),
+    ShortcutItem("图片预览页放大/图片排序页放大", listOf("Ctrl", "]")),
+    ShortcutItem("图片预览页图片左移/切换上一张图", listOf("←")),
+    ShortcutItem("图片预览页图片右移/切换下一张图", listOf("→")),
+    ShortcutItem("图片预览页图片上移/PDF预览页页面上移", listOf("↑")),
+    ShortcutItem("图片预览页图片下移/PDF预览页页面下移", listOf("↓")),
+    ShortcutItem("图片预览页切换底色", listOf("Ctrl", "Alt", "G")),
+    ShortcutItem("PDF预览页大幅移动", listOf("Space")),
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,7 +80,6 @@ fun SettingsScreen(
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val debugState by viewModel.debuggable
-    val density = LocalDensity.current
     val context = LocalContext.current
     val activity = context as? ComponentActivity
     var clearEnabled by remember { mutableStateOf(true) }
@@ -71,7 +88,8 @@ fun SettingsScreen(
         focusRequester.requestFocus()
     }
     Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
+        modifier = Modifier
+            .nestedScroll(scrollBehavior.nestedScrollConnection)
             .focusRequester(focusRequester)
             .focusable()
             .onPreviewKeyEvent { event ->
@@ -126,10 +144,16 @@ fun SettingsScreen(
             val context = LocalContext.current
             var licenseText by remember { mutableStateOf("License") }
             var isLicenseShow by remember { mutableStateOf(false) }
+            val isKeyboardShortcutsDialogShow by viewModel.isKeyboardShortcutsDialogShow.collectAsState()
             SettingsGroupTitle("存储")
             ListItem(
-                headlineContent = { Text("清理缓存") },
-                supportingContent = { Text("清理一些无用的缓存文件") },
+                modifier = Modifier.clickable(
+                    enabled = clearEnabled
+                ) {
+                    HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
+                    clearEnabled = false
+                    viewModel.clearFileCache(context)
+                },
                 trailingContent = {
                     Button(
                         onClick = {
@@ -146,13 +170,9 @@ fun SettingsScreen(
                         }
                     }
                 },
-                modifier = Modifier.clickable(
-                    enabled = clearEnabled
-                ) {
-                    HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
-                    clearEnabled = false
-                    viewModel.clearFileCache(context)
-                }
+                supportingContent = { Text("清理一些无用的缓存文件") },
+                colors = ListItemDefaults.colors(),
+                content = { Text("清理缓存") },
             )
             HorizontalDivider()
             SettingsGroupTitle("开发者选项")
@@ -167,8 +187,17 @@ fun SettingsScreen(
             HorizontalDivider()
             SettingsGroupTitle("关于")
             ListItem(
-                headlineContent = { Text("在 Github 上查看源码") },
-                supportingContent = { Text("Apache License 2.0") },
+                modifier = Modifier.combinedClickable(
+                    onClick = {
+                        HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
+                        viewModel.setKeyboardShortcutsDialogShow()
+                    },
+                ),
+                supportingContent = { Text("当然是键盘上的快捷键") },
+                colors = ListItemDefaults.colors(),
+                content = { Text("快捷键说明") },
+            )
+            ListItem(
                 modifier = Modifier.combinedClickable(
                     onClick = {
                         HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
@@ -184,7 +213,10 @@ fun SettingsScreen(
                         HapticManager.vibrate(context, HapticManager.EFFECT_HEAVY_CLICK)
                         isLicenseShow = true
                     }
-                )
+                ),
+                supportingContent = { Text("Apache License 2.0") },
+                colors = ListItemDefaults.colors(),
+                content = { Text("在 Github 上查看源码") },
             )
             LaunchedEffect(Unit) {
                 licenseText = context.readAsset("LICENSE")
@@ -218,6 +250,35 @@ fun SettingsScreen(
                     }
                 )
             }
+            if (isKeyboardShortcutsDialogShow) {
+                AlertDialog(
+                    onDismissRequest = viewModel::dismissKeyboardShortcutsDialog,
+                    title = {
+                        Text("快捷键说明")
+                    },
+                    text = {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .verticalScroll(rememberScrollState())
+                        ) {
+                            KEYBOARD_SHORTCUTS.forEach { ShortcutRow(it) }
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
+                                viewModel.dismissKeyboardShortcutsDialog()
+                            }
+                        ) {
+                            Text(
+                                text = stringResource(R.string.ok)
+                            )
+                        }
+                    }
+                )
+            }
             /*/
             repeat(19) { index ->
                 SettingsGroupTitle("Settings Group ${index + 1}")
@@ -242,6 +303,38 @@ fun SettingsScreen(
 
         }
     }
+}
+
+private data class ShortcutItem(
+    val desc: String,
+    val keys: List<String>
+)
+
+@Composable
+private fun ShortcutRow(item: ShortcutItem) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            text = item.desc,
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodyMedium
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            item.keys.forEach { KeyChip(it) }
+        }
+    }
+}
+
+@Composable
+private fun KeyChip(key: String) {
+    SuggestionChip(
+        onClick = {},
+        label = { Text(key, style = MaterialTheme.typography.labelMedium) },
+        contentPadding = PaddingValues(horizontal = 10.dp)
+    )
 }
 
 @Composable

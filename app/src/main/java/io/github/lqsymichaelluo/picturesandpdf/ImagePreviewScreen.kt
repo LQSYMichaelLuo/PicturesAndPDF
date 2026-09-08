@@ -136,6 +136,10 @@ fun ImagePreviewScreen(
                         true
                     }
 
+                    event.matches(key = Key.G, ctrl = true, alt = true) -> {
+                        toggleColorState()
+                        true
+                    }
                     event.matches(key = Key.DirectionLeft) -> {
                         if (isZoomed) {
                             HapticManager.vibrate(context, HapticManager.EFFECT_TICK)

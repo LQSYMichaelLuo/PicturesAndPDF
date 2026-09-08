@@ -4,6 +4,8 @@ import android.app.Application
 import android.content.Context
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 
 class SettingsViewModel(app: Application) : AndroidViewModel(application = app) {
@@ -11,6 +13,8 @@ class SettingsViewModel(app: Application) : AndroidViewModel(application = app) 
     val debuggable get() = AppFlags.debuggable
     val context = app
     val uploadedPDFList = AppFlags.uploadedPDFList
+    private val _isKeyboardShortcutsDialogShow = MutableStateFlow(false)
+    val isKeyboardShortcutsDialogShow: StateFlow<Boolean> = _isKeyboardShortcutsDialogShow
     fun toggleDebug() {
         val new = !AppFlags.debuggable.value
         AppFlags.debuggable.value = new
@@ -37,5 +41,11 @@ class SettingsViewModel(app: Application) : AndroidViewModel(application = app) 
                     //print(file.name)
                 }
             }
+    }
+    fun setKeyboardShortcutsDialogShow(){
+        _isKeyboardShortcutsDialogShow.value = true
+    }
+    fun dismissKeyboardShortcutsDialog(){
+        _isKeyboardShortcutsDialogShow.value = false
     }
 }

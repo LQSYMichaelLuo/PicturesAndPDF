@@ -1,6 +1,5 @@
 package io.github.lqsymichaelluo.picturesandpdf
 
-import android.graphics.Bitmap
 import android.view.DragEvent
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -47,6 +46,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LoadingIndicator
@@ -54,6 +54,7 @@ import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.PlainTooltip
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TooltipAnchorPosition
@@ -144,11 +145,11 @@ fun Pic2PDFScreen(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalItemSpacing = 8.dp
         ) {
-            for ((pdfName, bitmaps) in viewModel.pictureInputList) {
+            for ((pdfName, state) in viewModel.pictureInputList) {
                 item(key = pdfName) {
                     PictureGroupCard(
                         PDFName = pdfName,
-                        bitmapList = bitmaps,
+                        state = state,
                         viewModel = viewModel,
                         imagePreviewViewModel = imagePreviewViewModel,
                         modifier = Modifier.animateItem(),
@@ -180,7 +181,7 @@ fun Pic2PDFScreen(
 @Composable
 fun PictureGroupCard(
     PDFName: String,
-    bitmapList: List<Bitmap>,
+    state: PDFOutputState,
     viewModel: MainViewModel,
     imagePreviewViewModel: ImagePreviewViewModel,
     modifier: Modifier,
@@ -202,9 +203,11 @@ fun PictureGroupCard(
     var newPDFNameTitle by remember { mutableStateOf(newPDFName) }
     val addButtonInteractionSource = remember { MutableInteractionSource() }
     val dragPress = remember { mutableStateOf<PressInteraction.Press?>(null) }
+    val bitmapList = state.bitmaps
     val errorColor by animateColorAsState(
         targetValue = if (controlMode == ControlMode.DELETE) MaterialTheme.colorScheme.error else CardDefaults.cardColors().contentColor
     )
+
     fun toggleMode(target: ControlMode) {
         if ((target != ControlMode.SHOW && controlMode == ControlMode.SHOW) || (target == ControlMode.SHOW && controlMode != ControlMode.SHOW) || (target == ControlMode.SHOW && controlMode == ControlMode.SHOW)) {
             viewModel.rotationState(PDFName).value += 180f
@@ -546,7 +549,7 @@ fun PictureGroupCard(
                                 modifier = Modifier.padding(
                                     start = 12.dp,
                                     end = 12.dp,
-                                    bottom = 12.dp
+                                    bottom = 6.dp
                                 ),
                                 fontWeight = FontWeight.Bold
                             )
@@ -554,60 +557,119 @@ fun PictureGroupCard(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(
-                                        start = 12.dp,
-                                        end = 12.dp,
+                                        start = 4.dp,
+                                        end = 4.dp,
                                     )
                             ) {
-                                Text(
-                                    text = "输出PDF的文件名"
-                                )
-                                PDFName.let {
-                                    OutlinedTextField(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        value = newPDFName,
-                                        onValueChange = {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .clickable {}
+                                ) {
+                                    Text(
+                                        text = "输出PDF的文件名",
+                                        modifier = Modifier
+                                            .padding(
+                                                top = 6.dp,
+                                                start = 8.dp,
+                                                end = 8.dp,
+                                            )
+                                    )
+                                    PDFName.let {
+                                        OutlinedTextField(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(
+                                                    start = 8.dp,
+                                                    end = 8.dp,
+                                                ),
+                                            value = newPDFName,
+                                            onValueChange = {
+                                                HapticManager.vibrate(
+                                                    context,
+                                                    HapticManager.EFFECT_TICK
+                                                )
+                                                newPDFName = it
+                                                isError = newPDFName.isBlank()
+                                            },
+                                            supportingText = {
+                                                if (isError) {
+                                                    Text(
+                                                        text = "PDF名称不能为空",
+                                                        color = MaterialTheme.colorScheme.error
+                                                    )
+                                                }
+                                            },
+                                            isError = isError,
+                                            label = {
+                                                Text("")
+                                            },
+                                            singleLine = true
+                                        )
+                                    }
+                                    TextButton(
+                                        modifier = Modifier
+                                            .align(Alignment.End)
+                                            .padding(
+                                                start = 8.dp,
+                                                end = 8.dp,
+                                                bottom = 6.dp
+                                            ),
+                                        enabled = newPDFName.isNotBlank(),
+                                        onClick = {
                                             HapticManager.vibrate(
                                                 context,
-                                                HapticManager.EFFECT_TICK
+                                                HapticManager.EFFECT_CLICK
                                             )
-                                            newPDFName = it
-                                            isError = newPDFName.isBlank()
-                                        },
-                                        supportingText = {
-                                            if (isError) {
-                                                Text(
-                                                    text = "PDF名称不能为空",
-                                                    color = MaterialTheme.colorScheme.error
-                                                )
+                                            if (newPDFName.isNotBlank()) {
+                                                val finalName = onPDFNameChange(PDFName, newPDFName)
+                                                newPDFName = finalName.dropLast(4)
                                             }
                                         },
-                                        isError = isError,
-                                        label = {
-                                            Text("")
+                                        colors = ButtonDefaults.textButtonColors(
+                                            containerColor = MaterialTheme.colorScheme.primary,
+                                            //disabledContentColor = MaterialTheme.colorScheme.surfaceVariant,
+                                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                                        )
+                                    ) {
+                                        Text(stringResource(R.string.apply))
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(2.dp))
+                                HorizontalDivider(
+                                    modifier = Modifier.padding(
+                                        start = 8.dp,
+                                        end = 8.dp
+                                    )
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth()
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .clickable {
+                                            viewModel.setPreProcessing(PDFName, !state.usePreProcessing)
                                         },
-                                        singleLine = true
-                                    )
-                                }
-                                TextButton(
-                                    modifier = Modifier.align(Alignment.End),
-                                    enabled = newPDFName.isNotBlank(),
-                                    onClick = {
-                                        HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
-                                        if (newPDFName.isNotBlank()) {
-                                            val finalName = onPDFNameChange(PDFName, newPDFName)
-                                            newPDFName = finalName.dropLast(4)
-                                        }
-                                    },
-                                    colors = ButtonDefaults.textButtonColors(
-                                        containerColor = MaterialTheme.colorScheme.primary,
-                                        //disabledContentColor = MaterialTheme.colorScheme.surfaceVariant,
-                                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                                    )
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text(stringResource(R.string.apply))
+                                    Text(
+                                        "是否进行预处理？",
+                                        modifier = Modifier.padding(
+                                            8.dp
+                                        )
+                                    )
+                                    Switch(
+                                        modifier = Modifier.padding(
+                                            8.dp
+                                        ),
+                                        checked = state.usePreProcessing,
+                                        onCheckedChange = {
+                                            viewModel.setPreProcessing(PDFName, it)
+                                        }
+                                    )
                                 }
-                                Spacer(modifier = Modifier.height(12.dp))
-                                //HorizontalDivider()
+                                Spacer(modifier = Modifier.height(2.dp))
                             }
                         }
 
@@ -624,9 +686,10 @@ fun PictureGroupCard(
                                 fontWeight = FontWeight.Bold
                             )
                             Column(
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier
+                                    .fillMaxWidth()
                                     .padding(12.dp)
-                            ){
+                            ) {
                                 Text("此操作不可撤销。")
                                 TextButton(
                                     modifier = Modifier.align(Alignment.End),
@@ -643,6 +706,7 @@ fun PictureGroupCard(
                                 }
                             }
                         }
+
                         else -> {}
                     }
                 }

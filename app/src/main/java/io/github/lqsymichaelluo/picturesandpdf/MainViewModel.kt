@@ -18,7 +18,6 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -40,7 +39,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     val colorHistoryList = mutableStateListOf<ColorHistory>()
     val pictureInputList =
-        mutableStateMapOf<String, SnapshotStateList<Bitmap>>()
+        mutableStateMapOf<String, PDFOutputState>()
 
     //                    PDFName   Images
     val pdfInputList =
@@ -158,6 +157,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         ) as PicturesOutputState
     }
 
+    fun setPreProcessing(name: String, preProcess: Boolean) {
+        pictureInputList[name] =
+            pictureInputList[name]?.copy(usePreProcessing = preProcess) as PDFOutputState
+    }
+
     fun importPictures(context: Context, uris: List<Uri>, outputPDFName: String?) {
         val outputName =
             outputPDFName ?: "Output_${(System.currentTimeMillis() / 1000).toInt()}.pdf"
@@ -173,21 +177,23 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             }
         }
         if (list.isNotEmpty()) {
-            pictureInputList.merge(outputName, list) { old, new ->
-                old.apply { addAll(new) }
+            pictureInputList.merge(outputName, PDFOutputState(list)) { old, new ->
+                old.copy(bitmaps = old.bitmaps.apply { addAll(new.bitmaps) })
             }
         }
     }
 
     fun overridePicturesGroup(name: String, list: List<Bitmap>?) {
         list?.let {
-            pictureInputList[name] = list.toMutableStateList()
+            pictureInputList[name] = pictureInputList[name]?.copy(
+                bitmaps = list.toMutableStateList()
+            ) ?: PDFOutputState(list.toMutableStateList())
         }
     }
 
-    fun deletePictureFromGroup(pdfName:String, index: Any){
-        val list = pictureInputList[pdfName]
-        list?.size?.let { if (it <= 1) return print("图片组至少应当有1张图")}
+    fun deletePictureFromGroup(pdfName: String, index: Any) {
+        val list = pictureInputList[pdfName]?.bitmaps
+        list?.size?.let { if (it <= 1) return print("图片组至少应当有1张图") }
         when (index) {
             is Int -> {
                 list?.removeAt(index)?.recycle()
@@ -222,11 +228,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             }
             if (bitmaps.isEmpty()) return@launch
             withContext(Dispatchers.Main) {
-                val list = pictureInputList[outputName]
-                    ?: mutableStateListOf<Bitmap>().also {
+                val state = pictureInputList[outputName]
+                    ?: PDFOutputState(mutableStateListOf()).also {
                         pictureInputList[outputName] = it
                     }
-                list.addAll(
+                state.bitmaps.addAll(
                     bitmaps.map { bmp ->
                         bmp.copy(Bitmap.Config.ARGB_8888, false)
                     }
@@ -354,9 +360,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
 
     fun deletePicturesGroup(pdfName: String) {
-        val list = pictureInputList[pdfName] ?: return
-        ThumbnailCache.removeAll(list)
-        PreviewBitmapCache.removeAll(list)
+        val state = pictureInputList[pdfName] ?: return
+        ThumbnailCache.removeAll(state.bitmaps)
+        PreviewBitmapCache.removeAll(state.bitmaps)
         pictureInputList.remove(pdfName)
     }
 
@@ -393,7 +399,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
             val resolver = context.contentResolver
 
-            pictureInputList.forEach { (pdfName, bitmaps) ->
+            pictureInputList.forEach { (pdfName, state) ->
                 val values = ContentValues().apply {
                     put(MediaStore.Downloads.DISPLAY_NAME, pdfName)
                     put(MediaStore.Downloads.MIME_TYPE, "application/pdf")
@@ -409,8 +415,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 uri?.let {
                     resolver.openOutputStream(it)?.use { os ->
                         Convertor().PicturesToPDFForApp(
-                            pic = bitmaps,
+                            pic = state.bitmaps,
                             pdf = os as FileOutputStream,
+                            usePreProcessing = state.usePreProcessing,
                             callBack = {i, pageCount ->
                             }
                         )
