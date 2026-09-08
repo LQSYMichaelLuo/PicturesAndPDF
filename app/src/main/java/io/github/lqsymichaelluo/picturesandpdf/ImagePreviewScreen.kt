@@ -135,7 +135,6 @@ fun ImagePreviewScreen(
                         onBack()
                         true
                     }
-
                     event.matches(key = Key.G, ctrl = true, alt = true) -> {
                         toggleColorState()
                         true

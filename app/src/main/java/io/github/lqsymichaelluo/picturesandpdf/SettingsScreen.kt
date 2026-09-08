@@ -68,7 +68,7 @@ private val KEYBOARD_SHORTCUTS = listOf(
     ShortcutItem("图片预览页图片右移/切换下一张图", listOf("→")),
     ShortcutItem("图片预览页图片上移/PDF预览页页面上移", listOf("↑")),
     ShortcutItem("图片预览页图片下移/PDF预览页页面下移", listOf("↓")),
-    ShortcutItem("图片预览页切换底色", listOf("Ctrl", "Alt", "G")),
+    ShortcutItem("图片预览页切换底色/PDF预览页切换底色", listOf("Ctrl", "Alt", "G")),
     ShortcutItem("PDF预览页大幅移动", listOf("Space")),
 )
 

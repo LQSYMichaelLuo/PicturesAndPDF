@@ -135,7 +135,10 @@ fun PDFPreviewScreen(
             PdfViewer(
                 file = file,
                 modifier = Modifier.fillMaxSize(),
-                onBack = onBack
+                onBack = onBack,
+                toggleColorState = {
+                    toggleColorState()
+                }
             )
         }
     }

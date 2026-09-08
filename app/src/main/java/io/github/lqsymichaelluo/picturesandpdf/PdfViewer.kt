@@ -194,7 +194,8 @@ fun PdfViewer(
     file: File,
     modifier: Modifier = Modifier,
     indicatorDismissDelay: Long = 1500L,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    toggleColorState: () -> Unit
 ) {
     val state = rememberPdfRenderState(file)
     val density = LocalDensity.current
@@ -319,6 +320,11 @@ fun PdfViewer(
                    scope.launch {
                        listState.animateScrollBy(stepPx * 8, tween(durationMillis = 220))
                    }
+                    true
+                } else if (
+                    event.matches(key = Key.G, ctrl = true, alt = true)
+                ){
+                    toggleColorState()
                     true
                 } else {
                     false
