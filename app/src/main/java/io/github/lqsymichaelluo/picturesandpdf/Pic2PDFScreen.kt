@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridState
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
@@ -54,6 +55,7 @@ import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.PlainTooltip
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -77,6 +79,7 @@ import androidx.compose.ui.draganddrop.DragAndDropTarget
 import androidx.compose.ui.draganddrop.mimeTypes
 import androidx.compose.ui.draganddrop.toAndroidDragEvent
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -91,6 +94,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import kotlin.math.roundToInt
+import kotlin.random.Random
 
 @Composable
 fun Pic2PDFScreen(
@@ -565,7 +569,12 @@ fun PictureGroupCard(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clip(RoundedCornerShape(8.dp))
-                                        .clickable {}
+                                        .clickable {
+                                            HapticManager.vibrate(
+                                                context,
+                                                HapticManager.EFFECT_CLICK
+                                            )
+                                        }
                                 ) {
                                     Text(
                                         text = "输出PDF的文件名",
@@ -614,7 +623,7 @@ fun PictureGroupCard(
                                             .padding(
                                                 start = 8.dp,
                                                 end = 8.dp,
-                                                bottom = 6.dp
+                                                bottom = 2.dp
                                             ),
                                         enabled = newPDFName.isNotBlank(),
                                         onClick = {
@@ -629,14 +638,13 @@ fun PictureGroupCard(
                                         },
                                         colors = ButtonDefaults.textButtonColors(
                                             containerColor = MaterialTheme.colorScheme.primary,
-                                            //disabledContentColor = MaterialTheme.colorScheme.surfaceVariant,
                                             contentColor = MaterialTheme.colorScheme.onPrimary,
                                         )
                                     ) {
                                         Text(stringResource(R.string.apply))
                                     }
                                 }
-                                Spacer(modifier = Modifier.height(2.dp))
+                                Spacer(modifier = Modifier.height(6.dp))
                                 HorizontalDivider(
                                     modifier = Modifier.padding(
                                         start = 8.dp,
@@ -645,28 +653,159 @@ fun PictureGroupCard(
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Row(
-                                    modifier = Modifier.fillMaxWidth()
+                                    modifier = Modifier
+                                        .fillMaxWidth()
                                         .clip(RoundedCornerShape(8.dp))
                                         .clickable {
-                                            viewModel.setPreProcessing(PDFName, !state.usePreProcessing)
+                                            HapticManager.vibrate(
+                                                context,
+                                                HapticManager.EFFECT_CLICK
+                                            )
+                                            val imagePreviewData = ImagePreviewData(
+                                                bitmapList = bitmapList.toMutableStateList()
+                                            )
+                                            imagePreviewViewModel.addImagePreviewList(
+                                                pdfName = "$newPDFNameTitle.pdf",
+                                                imagePreviewData = imagePreviewData
+                                            )
+                                            rootNavController.navigate("image_sorting/$newPDFNameTitle.pdf/1")
                                         },
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text(
-                                        "是否进行预处理？",
-                                        modifier = Modifier.padding(
-                                            8.dp
-                                        )
-                                    )
-                                    Switch(
+                                    Row(
                                         modifier = Modifier.padding(
                                             8.dp
                                         ),
-                                        checked = state.usePreProcessing,
-                                        onCheckedChange = {
-                                            viewModel.setPreProcessing(PDFName, it)
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(R.drawable.ic_sort),
+                                            contentDescription = null
+                                        )
+                                        Spacer(
+                                            modifier = Modifier.width(12.dp)
+                                        )
+                                        Text(
+                                            "为图片组排序"
+                                        )
+                                    }
+                                    Icon(
+                                        painter = painterResource(R.drawable.ic_arrow_back),
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .rotate(180f)
+                                            .padding(
+                                                10.dp
+                                            )
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                                HorizontalDivider(
+                                    modifier = Modifier.padding(
+                                        start = 8.dp,
+                                        end = 8.dp
+                                    )
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .clickable {
+                                            HapticManager.vibrate(
+                                                context,
+                                                HapticManager.EFFECT_CLICK
+                                            )
+                                            viewModel.setPreProcessing(
+                                                PDFName,
+                                                !state.usePreProcessing
+                                            )
+                                        },
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(
+                                            "是否进行预处理？",
+                                            modifier = Modifier.padding(
+                                                8.dp
+                                            )
+                                        )
+                                        Switch(
+                                            modifier = Modifier.padding(
+                                                8.dp
+                                            ),
+                                            checked = state.usePreProcessing,
+                                            onCheckedChange = {
+                                                HapticManager.vibrate(
+                                                    context,
+                                                    HapticManager.EFFECT_CLICK
+                                                )
+                                                viewModel.setPreProcessing(PDFName, it)
+                                            }
+                                        )
+                                    }
+                                    AnimatedVisibility(
+                                        visible = state.usePreProcessing
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text(
+                                                "质量",
+                                                modifier = Modifier.padding(
+                                                    8.dp
+                                                )
+                                            )
+                                            Slider(
+                                                modifier = Modifier.padding(
+                                                    8.dp
+                                                ),
+                                                value = state.compressQuality.toFloat(),
+                                                onValueChange = {
+                                                    HapticManager.vibrate(
+                                                        context,
+                                                        HapticManager.EFFECT_TICK
+                                                    )
+                                                    viewModel.setCompressQuality(
+                                                        PDFName,
+                                                        it.roundToInt()
+                                                    )
+                                                },
+                                                valueRange = 0f..100f,
+                                            )
                                         }
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                                HorizontalDivider(
+                                    modifier = Modifier.padding(
+                                        start = 8.dp,
+                                        end = 8.dp
+                                    )
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .clickable {
+                                            HapticManager.vibrate(
+                                                context,
+                                                HapticManager.EFFECT_CLICK
+                                            )
+                                        }
+                                ) {
+                                    Text(
+                                        "图片处理模块占位" + "文本".repeat(Random.nextInt(1,19)),
+                                        modifier = Modifier.padding(
+                                            8.dp
+                                        )
                                     )
                                 }
                                 Spacer(modifier = Modifier.height(2.dp))

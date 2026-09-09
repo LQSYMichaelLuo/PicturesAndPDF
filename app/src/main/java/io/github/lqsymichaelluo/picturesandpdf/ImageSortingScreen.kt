@@ -97,6 +97,7 @@ import sh.calvin.reorderable.rememberReorderableLazyGridState
 @Composable
 fun ImageSortingScreen(
     pdfName: String = "unknown.pdf",
+    state: Int = 0,
     onBack: () -> Unit = {},
     onImportPicture: (String?) -> Unit,
     requestDragAndDropPermission: (DragEvent) -> Unit,
@@ -154,7 +155,6 @@ fun ImageSortingScreen(
             .onPreviewKeyEvent { event ->
                 if (
                     event.matches(key = Key.B, ctrl = true)
-                    || event.matches(key = Key.Backspace)
                 ) {
                     onBack()
                     true
@@ -167,7 +167,7 @@ fun ImageSortingScreen(
                     event.matches(key = Key.RightBracket, ctrl = true)
                 ) {
                     scale = (scale * 1.25f).coerceIn(0.45f, 2f)
-                    if (scale == 2f) {
+                    if (scale == 2f && state == 0) {
                         onBack()
                     }
                     true
@@ -327,7 +327,7 @@ fun ImageSortingScreen(
                                 HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
 
                                 val previewEntry = imagePreviewViewModel.imagePreviewList[pdfName]
-                                if (scale >= 2f && previewEntry != null && !previewEntry.hasTriggeredPreview) {
+                                if (scale >= 2f && previewEntry != null && !previewEntry.hasTriggeredPreview && state == 0) {
                                     HapticManager.vibrate(context, HapticManager.EFFECT_HEAVY_CLICK)
                                     imagePreviewViewModel.setTriggerPreview(
                                         pdfName = pdfName,

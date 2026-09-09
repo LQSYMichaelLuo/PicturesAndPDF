@@ -7,6 +7,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.gestures.calculateCentroid
 import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -196,7 +197,7 @@ fun ImagePreviewScreen(
                         if (currentScale.value <= 0.65f) {
                             if (!imagePreviewViewModel.imagePreviewList[pdfName]!!.hasTriggeredSort) {
                                 imagePreviewViewModel.setTriggerSort(pdfName, triggered = true)
-                                navController.navigate("image_sorting/$pdfName")
+                                navController.navigate("image_sorting/$pdfName/0")
                                 imagePreviewViewModel.setTriggerPreview(
                                     pdfName = pdfName,
                                     triggered = false
@@ -267,7 +268,7 @@ fun ImagePreviewScreen(
                                     pdfName = pdfName,
                                     triggered = true
                                 )
-                                navController.navigate("image_sorting/$pdfName")
+                                navController.navigate("image_sorting/$pdfName/0")
                                 imagePreviewViewModel.setTriggerPreview(
                                     pdfName = pdfName,
                                     triggered = false
@@ -340,7 +341,7 @@ fun ImagePreviewScreen(
                         onPinchClosed = {
                             if (!imagePreviewViewModel.imagePreviewList[pdfName]!!.hasTriggeredSort) {
                                 imagePreviewViewModel.setTriggerSort(pdfName, triggered = true)
-                                navController.navigate("image_sorting/$pdfName")
+                                navController.navigate("image_sorting/$pdfName/0")
                                 imagePreviewViewModel.setTriggerPreview(
                                     pdfName = pdfName,
                                     triggered = false
@@ -411,7 +412,21 @@ fun PreviewPage(
     val imageSize = remember(source) { IntSize(source.width, source.height) }
     var containerSize by remember { mutableStateOf(IntSize.Zero) }
     var snapping by remember { mutableStateOf(false) }
+    var isGestureScaling by remember { mutableStateOf(false) }
+    var lastScale by remember { mutableFloatStateOf(scale.value) }
 
+    LaunchedEffect(scale.value, isGestureScaling) {
+        if (!isGestureScaling) {
+            val currentScale = scale.value
+            if (lastScale != 0f && lastScale != currentScale) {
+                val scaleFactor = currentScale / lastScale
+                val newX = offsetXState.value * scaleFactor
+                val newY = offsetYState.value * scaleFactor
+                onOffsetChangeState.value(newX, newY)
+            }
+        }
+        lastScale = scale.value
+    }
     var ready by remember(source) {
         mutableStateOf(
             if (PreviewBitmapCache.needsFitting(source)) PreviewBitmapCache.peek(source)
@@ -455,15 +470,36 @@ fun PreviewPage(
             .pointerInput(Unit) {
                 awaitPointerEventScope {
                     while (true) {
-                        var isScaling = false
+                        isGestureScaling = false
                         do {
                             val event = awaitPointerEvent()
                             val zoomChange = event.calculateZoom()
                             val panChange = event.calculatePan()
+                            val centroid = event.calculateCentroid()
+
+                            val container = containerState.value
+                            val pivotX = container.width / 2f
+                            val pivotY = container.height / 2f
 
                             if (zoomChange != 1f) {
-                                isScaling = true
-                                val target = (scale.value * zoomChange).fastCoerceIn(0.6f, 35f)
+                                isGestureScaling = true
+                                val oldScale = scale.value
+                                val target = (oldScale * zoomChange).fastCoerceIn(0.6f, 35f)
+                                val scaleFactor = target / oldScale
+
+                                var newX = offsetXState.value * scaleFactor + (centroid.x - pivotX) * (1 - scaleFactor)
+                                var newY = offsetYState.value * scaleFactor + (centroid.y - pivotY) * (1 - scaleFactor)
+
+                                val limit = calculateOffsetLimit(
+                                    scale = target,
+                                    container = container,
+                                    image = imageSizeState.value
+                                )
+                                newX = (newX + panChange.x).fastCoerceIn(-limit.x, limit.x)
+                                newY = (newY + panChange.y).fastCoerceIn(-limit.y, limit.y)
+
+                                onOffsetChangeState.value(newX, newY)
+
                                 if (!snapping) {
                                     snapping = true
                                     scope.launch {
@@ -474,27 +510,28 @@ fun PreviewPage(
                                         }
                                     }
                                 }
+                            } else {
+                                if (scale.value > 1f) {
+                                    val limit = calculateOffsetLimit(
+                                        scale = scale.value,
+                                        container = container,
+                                        image = imageSizeState.value
+                                    )
+                                    val finalX = (offsetXState.value + panChange.x).fastCoerceIn(-limit.x, limit.x)
+                                    val finalY = (offsetYState.value + panChange.y).fastCoerceIn(-limit.y, limit.y)
+                                    onOffsetChangeState.value(finalX, finalY)
+                                    event.changes.forEach { it.consume() }
+                                } else {
+                                    if (panChange.y.absoluteValue > panChange.x.absoluteValue) {
+                                        event.changes.forEach { it.consume() }
+                                    }
+                                }
                             }
 
                             if (scale.value <= 0.65f) onPinchClosedState.value()
 
-                            if (scale.value > 1f || isScaling) {
-                                val limit = calculateOffsetLimit(
-                                    scale = scale.value,
-                                    container = containerState.value,
-                                    image = imageSizeState.value
-                                )
-                                val newX = (offsetXState.value + panChange.x).fastCoerceIn(-limit.x, limit.x)
-                                val newY = (offsetYState.value + panChange.y).fastCoerceIn(-limit.y, limit.y)
-                                onOffsetChangeState.value(newX, newY)
-                                event.changes.forEach { it.consume() }
-                            } else {
-                                if (panChange.y.absoluteValue > panChange.x.absoluteValue) {
-                                    event.changes.forEach { it.consume() }
-                                }
-                            }
                         } while (event.changes.any { it.pressed })
-
+                        isGestureScaling = false
                         val limit = calculateOffsetLimit(
                             scale = scale.value,
                             container = containerState.value,

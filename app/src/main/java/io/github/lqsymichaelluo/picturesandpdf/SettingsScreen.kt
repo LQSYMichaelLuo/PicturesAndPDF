@@ -105,6 +105,9 @@ fun SettingsScreen(
             },
         topBar = {
             LargeTopAppBar(
+                modifier = Modifier.onSizeChanged {
+                    HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
+                },
                 title = { Text(stringResource(R.string.settings)) },
                 scrollBehavior = scrollBehavior,
                 navigationIcon = {
@@ -137,9 +140,6 @@ fun SettingsScreen(
                 .padding(paddingValues)
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .onSizeChanged {
-                    HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
-                }
         ) {
             val context = LocalContext.current
             var licenseText by remember { mutableStateOf("License") }

@@ -161,6 +161,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         pictureInputList[name] =
             pictureInputList[name]?.copy(usePreProcessing = preProcess) as PDFOutputState
     }
+    fun setCompressQuality(name: String, compressQuality: Int) {
+        pictureInputList[name] =
+            pictureInputList[name]?.copy(compressQuality = compressQuality) as PDFOutputState
+    }
 
     fun importPictures(context: Context, uris: List<Uri>, outputPDFName: String?) {
         val outputName =
@@ -418,6 +422,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                             pic = state.bitmaps,
                             pdf = os as FileOutputStream,
                             usePreProcessing = state.usePreProcessing,
+                            compressQuality = state.compressQuality,
                             callBack = {i, pageCount ->
                             }
                         )

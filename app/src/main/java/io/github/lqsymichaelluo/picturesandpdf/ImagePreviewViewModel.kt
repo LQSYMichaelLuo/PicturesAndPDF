@@ -123,7 +123,7 @@ class ImagePreviewViewModel : ViewModel() {
     fun imagePreviewBackgroundColorState(imageID: String): MutableState<ImagePreviewBackgroundColorState> =
         _imagePreviewBackgroundColorStateMap.getOrPut(imageID) {
             mutableStateOf(
-                ImagePreviewBackgroundColorState.Black
+                ImagePreviewBackgroundColorState.Gray
             )
         }
 }

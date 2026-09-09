@@ -9,7 +9,7 @@ import androidx.navigation.compose.rememberNavController
 import io.github.lqsymichaelluo.picturesandpdf.ui.theme.PicturesPDFTheme
 
 const val image_preview_id = "image_preview/{pdfName}/{index}"
-const val image_sorting_id = "image_sorting/{pdfName}"
+const val image_sorting_id = "image_sorting/{pdfName}/{state}"
 const val pdf_preview_id = "pdf_preview/{pdfName}"
 
 @Composable
@@ -64,9 +64,11 @@ fun RootNavGraph(
             }
             composable(image_sorting_id) {
                 val pdfName = it.arguments?.getString("pdfName")
+                val state = it.arguments?.getString("state")!!.toInt()
                 pdfName?.let {
                     ImageSortingScreen(
                         pdfName = pdfName,
+                        state = state,
                         onBack = {
                             navController.popBackStack()
                             imagePreviewViewModel.setTriggerSort(

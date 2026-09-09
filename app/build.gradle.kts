@@ -35,6 +35,10 @@ android {
             optimization {
                 enable = false
             }
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
             isDebuggable = false
         }
     }
@@ -77,5 +81,4 @@ dependencies {
     implementation(project(":shared"))
     implementation(libs.androidx.browser)
     implementation(libs.reorderable)
-    implementation(libs.pdfbox.android)
 }

@@ -2,24 +2,20 @@ package io.github.lqsymichaelluo.picturesandpdf
 
 import android.graphics.Bitmap
 import android.graphics.Bitmap.createBitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Matrix
 import android.graphics.pdf.PdfDocument
 import android.graphics.pdf.PdfRenderer
+import android.os.Build
 import android.os.ParcelFileDescriptor
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import com.tom_roush.pdfbox.pdmodel.PDDocument
-import com.tom_roush.pdfbox.pdmodel.PDPage
-import com.tom_roush.pdfbox.pdmodel.PDPageContentStream
-import com.tom_roush.pdfbox.pdmodel.common.PDRectangle
-import com.tom_roush.pdfbox.pdmodel.graphics.image.LosslessFactory
-import com.tom_roush.pdfbox.pdmodel.graphics.image.PDImageXObject
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import kotlin.math.roundToInt
-import android.graphics.Color as AndroidColor
 
 class Convertor {
 
@@ -28,19 +24,23 @@ class Convertor {
         @param backgroundColor: an int must be in the range 0x00000000 to 0xFFFFFFFF
      */
     @Throws(IOException::class)
-    fun PicturesToPDF(pic: List<Bitmap>, pdf: FileOutputStream, backgroundColor: Int = 0x00000000) : Boolean  {
+    fun PicturesToPDF(
+        pic: List<Bitmap>,
+        pdf: FileOutputStream,
+        backgroundColor: Int = 0x00000000
+    ): Boolean {
         val document = PdfDocument()
-        for (i in pic.indices){
+        for (i in pic.indices) {
             val bitmap = pic[i]
             if (bitmap.isRecycled()) continue
             val pageInfo = PdfDocument.PageInfo.Builder(
-               bitmap.width,
-               bitmap.height,
-               i
+                bitmap.width,
+                bitmap.height,
+                i
             ).create()
             val page = document.startPage(pageInfo)
             val canvas = page.canvas
-            if (backgroundColor!=0x00000000) {
+            if (backgroundColor != 0x00000000) {
                 canvas.drawColor(backgroundColor)
             }
             canvas.drawBitmap(bitmap, 0f, 0f, null)
@@ -59,8 +59,12 @@ class Convertor {
                  Actually, we could even set the scale into bigger float number, but 10 is enough.
         @param backgroundColor: an int must be in range 0x00000000 to 0xFFFFFFFF
      */
-    @Throws (IOException::class)
-    fun PDFtoPictures(pdf: File, scale: Float = 4f, backgroundColor: Int = 0x00000000) : List<Bitmap> {
+    @Throws(IOException::class)
+    fun PDFtoPictures(
+        pdf: File,
+        scale: Float = 4f,
+        backgroundColor: Int = 0x00000000
+    ): List<Bitmap> {
         var s = scale
         if (s < 1f || s > 15f) s = 4f
         val pic: MutableList<Bitmap> = ArrayList()
@@ -72,7 +76,7 @@ class Convertor {
         val renderer = PdfRenderer(parcelFileDescriptor)
         val matrix = Matrix()
         matrix.postScale(s, s)
-        for (i in 0 until renderer.pageCount){
+        for (i in 0 until renderer.pageCount) {
             val page = renderer.openPage(i)
             val origW = page.width
             val origH = page.height
@@ -88,7 +92,7 @@ class Convertor {
                 continue
             }
             val canvas = Canvas(bitmap)
-            if (backgroundColor!=0x00000000) {
+            if (backgroundColor != 0x00000000) {
                 canvas.drawColor(backgroundColor)
             }
             page.render(
@@ -107,11 +111,20 @@ class Convertor {
 
     /*/ @param pic: the List of Bitmap to be converted into pdf
         @param pdf: the "java.io.FileOutputStream" object of the PDF file to be created
-        @param backgroundColor: an int must be in the range 0x00000000 to 0xFFFFFFFF
+        @param usePreProcessing: a boolean to decide pre-processing
+        @param compressQuality: an int to decide the quality of pre-processing
+        @param backgroundColor: a color whose value must be in the range 0x00000000 to 0xFFFFFFFF
         @param callBack: a function to receive an Int which means progress and an Int which means page count
      */
     @Throws(IOException::class)
-    fun PicturesToPDFForApp(pic: List<Bitmap>, pdf: FileOutputStream?, usePreProcessing: Boolean = false, backgroundColor: Int = 0x00000000, callBack: (Int, Int) -> Unit) : Boolean  {
+    fun PicturesToPDFForApp(
+        pic: List<Bitmap>,
+        pdf: FileOutputStream?,
+        usePreProcessing: Boolean = false,
+        compressQuality: Int = 82,
+        backgroundColor: Color = Color(0x00000000),
+        callBack: (Int, Int) -> Unit
+    ): Boolean {
         if (!usePreProcessing) {
             val document = android.graphics.pdf.PdfDocument()
             for (i in pic.indices) {
@@ -121,7 +134,7 @@ class Convertor {
                     .Builder(bitmap.width, bitmap.height, i + 1).create()
                 val page = document.startPage(pageInfo)
                 val canvas = page.canvas
-                if (backgroundColor != 0x00000000) canvas.drawColor(backgroundColor)
+                canvas.drawColor(backgroundColor.toArgb())
                 canvas.drawBitmap(bitmap, 0f, 0f, null)
                 document.finishPage(page)
                 callBack(i + 1, pic.size)
@@ -130,111 +143,45 @@ class Convertor {
             document.close()
             return true
         }
+        val document = PdfDocument()
 
-        val flattenOnBg = AndroidColor.alpha(backgroundColor) == 0xFF
-        val cache = HashMap<String, PDImageXObject>()
+        for (i in pic.indices) {
+            val originalBitmap = pic[i]
+            if (originalBitmap.isRecycled) continue
 
-        PDDocument().use { doc ->
-            for (i in pic.indices) {
-                val src = pic[i]
-                if (src.isRecycled) continue
+            val bmp = createBitmap(
+                originalBitmap.width, originalBitmap.height, Bitmap.Config.ARGB_8888
+            )
+            val canvas = Canvas(bmp)
+            canvas.drawColor(backgroundColor.toArgb())
+            canvas.drawBitmap(originalBitmap, 0f, 0f, null)
 
-                val base = if (src.config == Bitmap.Config.ARGB_8888) src
-                else src.copy(Bitmap.Config.ARGB_8888, false)
-
-                var work = createBitmap(base)
-
-
-                val pageW = work.width.toFloat()
-                val pageH = work.height.toFloat()
-                var dx = 0f
-                var dy = 0f
-                var iw = pageW
-                var ih = pageH
-
-                if (flattenOnBg) {
-                    val flat = createBitmap(work.width, work.height, Bitmap.Config.ARGB_8888)
-                    val c = Canvas(flat)
-                    c.drawColor(backgroundColor)
-                    c.drawBitmap(work, 0f, 0f, null)
-                    flat.setHasAlpha(false)
-                    work.recycle()
-                    work = flat
-                } else {
-                    when (val a = scanAlpha(work)) {
-                        null -> work.setHasAlpha(false)
-                        else -> when {
-                            a.fullyTransparent || a.fullyOpaque -> work.setHasAlpha(false)
-                            (a.right - a.left < work.width ||
-                                    a.bottom - a.top < work.height) -> {
-                                val cw = (a.right - a.left).coerceAtLeast(1)
-                                val ch = (a.bottom - a.top).coerceAtLeast(1)
-                                val cropped = Bitmap.createBitmap(work, a.left, a.top, cw, ch)
-                                cropped.setHasAlpha(true)
-                                dx = a.left.toFloat()
-                                dy = pageH - a.bottom
-                                iw = cw.toFloat()
-                                ih = ch.toFloat()
-                                work.recycle()
-                                work = cropped
-                            }
-                            else -> work.setHasAlpha(true)
-                        }
-                    }
-                }
-
-                val pdImage: PDImageXObject =
-                    LosslessFactory.createFromImage(doc, work)
-
-                work.recycle()
-
-                val page = PDPage(PDRectangle(pageW, pageH))
-                doc.addPage(page)
-                PDPageContentStream(doc, page).use { cs ->
-                    cs.drawImage(pdImage, dx, dy, iw, ih)
-                }
-                callBack(i + 1, pic.size)
+            val compressedData = ByteArrayOutputStream().use { os ->
+                bmp.compress(
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+                        Bitmap.CompressFormat.WEBP_LOSSY
+                    else
+                        Bitmap.CompressFormat.WEBP,
+                    compressQuality, os
+                )
+                os.toByteArray()
             }
-            pdf?.let { doc.save(it) }
+
+            val processedBitmap = BitmapFactory.decodeByteArray(
+                compressedData, 0, compressedData.size
+            ) ?: continue
+
+            val pageInfo = PdfDocument.PageInfo
+                .Builder(processedBitmap.width, processedBitmap.height, i + 1).create()
+            val page = document.startPage(pageInfo)
+            page.canvas.drawBitmap(processedBitmap, 0f, 0f, null)
+            document.finishPage(page)
+            processedBitmap.recycle()
+            callBack(i + 1, pic.size)
         }
+        pdf?.let { document.writeTo(it) }
+        document.close()
         return true
-    }
-    private data class AlphaInfo(
-        val fullyOpaque: Boolean,
-        val fullyTransparent: Boolean,
-        val left: Int, val top: Int, val right: Int, val bottom: Int
-    )
-    private fun recycleIfTmp(b: Bitmap, vararg keep: Bitmap) {
-        if (keep.any { it === b }) return
-        if (!b.isRecycled) b.recycle()
-    }
-    private fun scanAlpha(bmp: Bitmap): AlphaInfo? {
-        if (bmp.config != Bitmap.Config.ARGB_8888) return null
-        val w = bmp.width
-        val h = bmp.height
-        val row = IntArray(w)
-        var minA = 255
-        var maxA = 0
-        var left = w
-        var top = h
-        var right = -1
-        var bottom = -1
-        for (y in 0 until h) {
-            bmp.getPixels(row, 0, w, 0, y, w, 1)
-            for (x in 0 until w) {
-                val a = row[x] ushr 24
-                if (a < minA) minA = a
-                if (a > maxA) maxA = a
-                if (a != 0) {
-                    if (x < left) left = x
-                    if (x > right) right = x
-                    if (y < top) top = y
-                    bottom = y
-                }
-            }
-        }
-        if (maxA == 0) return AlphaInfo(false, true, 0, 0, w, h)
-        return AlphaInfo(minA == 255, false, left, top, right + 1, bottom + 1)
     }
 
     /*/ @param pdf: the "java.io.File" object of the PDF file to be read
@@ -243,11 +190,16 @@ class Convertor {
                        4 -> high definition, balancing image quality and file size
                       10 -> nearly lossless
                  Actually, we could even set the scale into bigger float number, but 10 is enough.
-        @param backgroundColor: an int must be in range 0x00000000 to 0xFFFFFFFF
+        @param backgroundColor: a color whose value must be in range 0x00000000 to 0xFFFFFFFF
         @param callBack: a function to receive an Int which means progress and an Int which means page count
      */
-    @Throws (IOException::class)
-    fun PDFtoPicturesForApp(pdf: File, scale: Float = 4f, backgroundColor: Color = Color(0x00000000), callBack: (Int, Int) -> Unit) : List<Bitmap> {
+    @Throws(IOException::class)
+    fun PDFtoPicturesForApp(
+        pdf: File,
+        scale: Float = 4f,
+        backgroundColor: Color = Color(0x00000000),
+        callBack: (Int, Int) -> Unit
+    ): List<Bitmap> {
         var s = scale
         if (s < 1f || s > 15f) s = 4f
         val pic: MutableList<Bitmap> = ArrayList()
@@ -260,7 +212,7 @@ class Convertor {
         val matrix = Matrix()
         matrix.postScale(s, s)
         val pageCount = renderer.pageCount
-        for (i in 0 until pageCount){
+        for (i in 0 until pageCount) {
             val page = renderer.openPage(i)
             val origW = page.width
             val origH = page.height

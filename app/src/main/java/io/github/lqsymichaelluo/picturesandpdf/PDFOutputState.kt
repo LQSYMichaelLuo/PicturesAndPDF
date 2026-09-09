@@ -7,5 +7,6 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class PDFOutputState(
     val bitmaps: SnapshotStateList<Bitmap>,
-    val usePreProcessing: Boolean = false
+    val usePreProcessing: Boolean = false,
+    val compressQuality: Int = 82
 )
