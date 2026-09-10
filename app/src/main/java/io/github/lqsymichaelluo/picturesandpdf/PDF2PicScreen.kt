@@ -3,6 +3,8 @@ package io.github.lqsymichaelluo.picturesandpdf
 import android.os.Build
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -85,7 +87,9 @@ import android.graphics.Color as AndroidColor
 fun PDF2PicScreen(
     viewModel: MainViewModel,
     isPhoneLandscape: Boolean,
-    rootNavController: NavController
+    rootNavController: NavController,
+    sharedTransitionScope: SharedTransitionScope,
+    navAnimatedVisibilityScope: AnimatedVisibilityScope
 ) {
     val debuggable by AppFlags.debuggable
     Box(
@@ -129,7 +133,9 @@ fun PDF2PicScreen(
                         viewModel = viewModel,
                         pdfName = pdfName,
                         modifier = Modifier.animateItem(),
-                        rootNavController = rootNavController
+                        rootNavController = rootNavController,
+                        sharedTransitionScope = sharedTransitionScope,
+                        navAnimatedVisibilityScope = navAnimatedVisibilityScope
                     )
                 }
             }
@@ -151,7 +157,9 @@ fun PDFCard(
     viewModel: MainViewModel,
     pdfName: String,
     modifier: Modifier,
-    rootNavController: NavController
+    rootNavController: NavController,
+    sharedTransitionScope: SharedTransitionScope,
+    navAnimatedVisibilityScope: AnimatedVisibilityScope
 ) {
     val state = viewModel.pdfInputList[pdfName] ?: return
     val context = LocalContext.current
@@ -181,617 +189,412 @@ fun PDFCard(
     val errorColor by animateColorAsState(
         targetValue = if (operateMode == OperateMode.DELETE) MaterialTheme.colorScheme.error else CardDefaults.cardColors().contentColor
     )
+
     fun toggleMode(target: OperateMode) {
         operateMode = if (operateMode == target) OperateMode.NONE else target
     }
-
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(8.dp)
-                .fillMaxWidth()
+    with(sharedTransitionScope) {
+        Card(
+            modifier = modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(8.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier
+                    .padding(8.dp)
+                    .fillMaxWidth()
             ) {
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(
-                            RoundedCornerShape(8.dp)
-                        )
-                        .combinedClickable(
-                            onClick = {
-                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
-                                rootNavController.navigate(
-                                    "pdf_preview/$pdfName"
-                                )
-                            }
-                        )
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Image(
-                        painter = painterResource(R.drawable.ic_pdf),
-                        contentDescription = null,
-                        modifier = Modifier.size(48.dp),
-                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    TooltipBox(
-                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-                            TooltipAnchorPosition.Above
-                        ),
-                        tooltip = { PlainTooltip { Text(pdfName) } },
-                        state = rememberTooltipState(),
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 4.dp)
+                            .clip(
+                                RoundedCornerShape(8.dp)
+                            )
+                            .combinedClickable(
+                                onClick = {
+                                    HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
+                                    rootNavController.navigate(
+                                        "pdf_preview/$pdfName"
+                                    )
+                                }
+                            )
                     ) {
-                        Text(
-                            text = pdfName,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold
+                        Image(
+                            painter = painterResource(R.drawable.ic_pdf),
+                            contentDescription = null,
+                            modifier = Modifier.size(48.dp),
+                            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary)
                         )
-                    }
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    TooltipBox(
-                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-                            TooltipAnchorPosition.Above
-                        ),
-                        tooltip = { PlainTooltip { Text("改变输出图片精度") } },
-                        state = rememberTooltipState()
-                    ) {
-                        TextButton(
-                            onClick = {
-                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
-                                toggleMode(OperateMode.SCALE)
-                            },
-                            colors = ButtonDefaults.textButtonColors(
-                                containerColor = containerColor
-                            )
-                        ) {
-                            Text(
-                                text = "%.1f".format(state.scale),
-                                color = contentColor,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-
-                    TooltipBox(
-                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-                            TooltipAnchorPosition.Above
-                        ),
-                        tooltip = { PlainTooltip { Text("改变输出图片背景颜色") } },
-                        state = rememberTooltipState()
-                    ) {
-                        IconButton(onClick = {
-                            HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
-                            toggleMode(OperateMode.PALETTE)
-                        }) {
-                            Icon(
-                                painter = painterResource(
-                                    if (operateMode == OperateMode.PALETTE)
-                                        R.drawable.ic_palette_filled
-                                    else
-                                        R.drawable.ic_palette
-                                ),
-                                contentDescription = null
-                            )
-                        }
-                    }
-                    if (state.toMultiplePictures) {
+                        Spacer(modifier = Modifier.width(6.dp))
                         TooltipBox(
                             positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
                                 TooltipAnchorPosition.Above
                             ),
-                            tooltip = { PlainTooltip { Text("输出多张图") } },
-                            state = rememberTooltipState()
+                            tooltip = { PlainTooltip { Text(pdfName) } },
+                            state = rememberTooltipState(),
                         ) {
-                            IconButton(onClick = {
-                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
-                                toggleMode(OperateMode.PAGE)
-                            }) {
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_pictures),
-                                    contentDescription = null
+                            Text(
+                                text = pdfName,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.sharedElement(
+                                    sharedContentState = rememberSharedContentState(key = pdfName),
+                                    animatedVisibilityScope = navAnimatedVisibilityScope
                                 )
-                            }
+                            )
                         }
-                    } else {
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         TooltipBox(
                             positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
                                 TooltipAnchorPosition.Above
                             ),
-                            tooltip = { PlainTooltip { Text("输出一张长图") } },
+                            tooltip = { PlainTooltip { Text("改变输出图片精度") } },
                             state = rememberTooltipState()
                         ) {
-                            IconButton(onClick = {
-                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
-                                toggleMode(OperateMode.PAGE)
-                            }) {
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_pdf2pic),
-                                    contentDescription = null
-                                )
-                            }
-                        }
-                    }
-                    val deleteTooltipState = rememberTooltipState()
-                    TooltipBox(
-                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-                            TooltipAnchorPosition.Above
-                        ),
-                        tooltip = { PlainTooltip { Text("删除该PDF项目") } },
-                        state = deleteTooltipState,
-                    ) {
-                        IconButton(
-                            onClick = {
-                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
-                                toggleMode(OperateMode.DELETE)
-                            }
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.ic_delete),
-                                contentDescription = null,
-                                tint = errorColor
-                            )
-                        }
-                    }
-                }
-            }
-
-            AnimatedVisibility(
-                visible = isOperatingAreaShow,
-                enter = fadeIn() + slideInVertically(),
-                exit = fadeOut() + slideOutVertically()
-            ) {
-                AnimatedContent(
-                    targetState = operateMode,
-                    transitionSpec = { fadeIn() togetherWith fadeOut() }
-                ) { target ->
-                    when (target) {
-                        OperateMode.SCALE -> Column(
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = "拖动滑动条以调节PDF转图片的渲染精度",
-                                modifier = Modifier.padding(12.dp),
-                                fontWeight = FontWeight.Bold
-                            )
-                            Slider(
-                                value = state.scale,
-                                onValueChange = {
-                                    HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
-                                    viewModel.setScale(pdfName, it)
+                            TextButton(
+                                onClick = {
+                                    HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
+                                    toggleMode(OperateMode.SCALE)
                                 },
-                                valueRange = 1f..8f,
-                                modifier = Modifier.padding(8.dp)
-                            )
-                            Text(
-                                text = "当渲染精度为1.0时，输出图片应当与PDF原画精度一致" +
-                                        "\n当渲染精度为4.0时，最兼顾图片质量和文件大小",
-                                modifier = Modifier.padding(12.dp)
-                            )
+                                colors = ButtonDefaults.textButtonColors(
+                                    containerColor = containerColor
+                                )
+                            ) {
+                                Text(
+                                    text = "%.1f".format(state.scale),
+                                    color = contentColor,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
 
-                        OperateMode.PALETTE -> Column(
-                            modifier = Modifier.fillMaxWidth()
+                        TooltipBox(
+                            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Above
+                            ),
+                            tooltip = { PlainTooltip { Text("改变输出图片背景颜色") } },
+                            state = rememberTooltipState()
                         ) {
-                            Text(
-                                text = "滑动拖动条以进行调节输出图片的背景颜色",
-                                modifier = Modifier.padding(
-                                    top = 12.dp,
-                                    start = 12.dp,
-                                    end = 12.dp
+                            IconButton(onClick = {
+                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
+                                toggleMode(OperateMode.PALETTE)
+                            }) {
+                                Icon(
+                                    painter = painterResource(
+                                        if (operateMode == OperateMode.PALETTE)
+                                            R.drawable.ic_palette_filled
+                                        else
+                                            R.drawable.ic_palette
+                                    ),
+                                    contentDescription = null
+                                )
+                            }
+                        }
+                        if (state.toMultiplePictures) {
+                            TooltipBox(
+                                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                    TooltipAnchorPosition.Above
                                 ),
-                                fontWeight = FontWeight.Bold
-                            )
+                                tooltip = { PlainTooltip { Text("输出多张图") } },
+                                state = rememberTooltipState()
+                            ) {
+                                IconButton(onClick = {
+                                    HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
+                                    toggleMode(OperateMode.PAGE)
+                                }) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.ic_pictures),
+                                        contentDescription = null
+                                    )
+                                }
+                            }
+                        } else {
+                            TooltipBox(
+                                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                    TooltipAnchorPosition.Above
+                                ),
+                                tooltip = { PlainTooltip { Text("输出一张长图") } },
+                                state = rememberTooltipState()
+                            ) {
+                                IconButton(onClick = {
+                                    HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
+                                    toggleMode(OperateMode.PAGE)
+                                }) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.ic_pdf2pic),
+                                        contentDescription = null
+                                    )
+                                }
+                            }
+                        }
+                        val deleteTooltipState = rememberTooltipState()
+                        TooltipBox(
+                            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Above
+                            ),
+                            tooltip = { PlainTooltip { Text("删除该PDF项目") } },
+                            state = deleteTooltipState,
+                        ) {
+                            IconButton(
+                                onClick = {
+                                    HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
+                                    toggleMode(OperateMode.DELETE)
+                                }
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_delete),
+                                    contentDescription = null,
+                                    tint = errorColor
+                                )
+                            }
+                        }
+                    }
+                }
 
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                HSVASlider(
-                                    hue = hue,
-                                    saturation = saturation,
-                                    value = value,
-                                    alpha = alpha,
-                                    onHueChange = {
-                                        HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
-                                        hue = it
-                                        viewModel.setBackgroundColor(
-                                            pdfName,
-                                            hsvaToColor(
-                                                it,
-                                                saturation,
-                                                value,
-                                                alpha
-                                            )
-                                        )
-                                    },
-                                    onSaturationChange = {
-                                        HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
-                                        saturation = it
-                                        viewModel.setBackgroundColor(
-                                            pdfName,
-                                            hsvaToColor(
-                                                hue,
-                                                it,
-                                                value,
-                                                alpha
-                                            )
-                                        )
-                                    },
+                AnimatedVisibility(
+                    visible = isOperatingAreaShow,
+                    enter = fadeIn() + slideInVertically(),
+                    exit = fadeOut() + slideOutVertically()
+                ) {
+                    AnimatedContent(
+                        targetState = operateMode,
+                        transitionSpec = { fadeIn() togetherWith fadeOut() }
+                    ) { target ->
+                        when (target) {
+                            OperateMode.SCALE -> Column(
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = "拖动滑动条以调节PDF转图片的渲染精度",
+                                    modifier = Modifier.padding(12.dp),
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Slider(
+                                    value = state.scale,
                                     onValueChange = {
                                         HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
-                                        value = it
-                                        viewModel.setBackgroundColor(
-                                            pdfName,
-                                            hsvaToColor(
-                                                hue,
-                                                saturation,
-                                                it,
-                                                alpha
-                                            )
-                                        )
+                                        viewModel.setScale(pdfName, it)
                                     },
-                                    onAlphaChange = {
-                                        HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
-                                        alpha = it
-                                        viewModel.setBackgroundColor(
-                                            pdfName,
-                                            hsvaToColor(
-                                                hue,
-                                                saturation,
-                                                value,
-                                                it
-                                            )
-                                        )
-                                    },
-                                    modifier = Modifier.padding(24.dp)
+                                    valueRange = 1f..8f,
+                                    modifier = Modifier.padding(8.dp)
+                                )
+                                Text(
+                                    text = "当渲染精度为1.0时，输出图片应当与PDF原画精度一致" +
+                                            "\n当渲染精度为4.0时，最兼顾图片质量和文件大小",
+                                    modifier = Modifier.padding(12.dp)
+                                )
+                            }
+
+                            OperateMode.PALETTE -> Column(
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = "滑动拖动条以进行调节输出图片的背景颜色",
+                                    modifier = Modifier.padding(
+                                        top = 12.dp,
+                                        start = 12.dp,
+                                        end = 12.dp
+                                    ),
+                                    fontWeight = FontWeight.Bold
                                 )
 
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.Center,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    if (editingColor.alpha <= 0.1f || editingColor.isCloseTo(
-                                            other = cardSurfaceColor
-                                        )
-                                    ) {
-                                        Image(
-                                            painter = painterResource(R.drawable.ic_circle),
-                                            contentDescription = null,
-                                            colorFilter = ColorFilter.tint(editingColor),
-                                            modifier = Modifier
-                                                .size(26.dp)
-                                                .drawWithContent {
-                                                    drawContent()
-                                                    val strokeWidth = 2.dp.toPx()
-                                                    drawCircle(
-                                                        color = Color.Gray,
-                                                        radius = size.minDimension / 2 - strokeWidth / 2,
-                                                        style = Stroke(width = strokeWidth)
-                                                    )
-                                                }
-                                        )
-                                    } else {
-                                        Image(
-                                            painter = painterResource(R.drawable.ic_circle),
-                                            contentDescription = null,
-                                            colorFilter = ColorFilter.tint(editingColor),
-                                            modifier = Modifier
-                                                .size(28.dp)
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text(
-                                        text = editingColor.toHexString(),
-                                        modifier = Modifier.combinedClickable(
-                                            //interactionSource = remember { MutableInteractionSource() },
-                                            //indication = null,
-                                            onClick = {
-                                                HapticManager.vibrate(
-                                                    context,
-                                                    HapticManager.EFFECT_CLICK
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    HSVASlider(
+                                        hue = hue,
+                                        saturation = saturation,
+                                        value = value,
+                                        alpha = alpha,
+                                        onHueChange = {
+                                            HapticManager.vibrate(
+                                                context,
+                                                HapticManager.EFFECT_TICK
+                                            )
+                                            hue = it
+                                            viewModel.setBackgroundColor(
+                                                pdfName,
+                                                hsvaToColor(
+                                                    it,
+                                                    saturation,
+                                                    value,
+                                                    alpha
                                                 )
-                                                viewModel.print("MEOW!!!")
-                                            },
-                                            onLongClick = {
-                                                HapticManager.vibrate(
-                                                    context,
-                                                    HapticManager.EFFECT_CLICK
+                                            )
+                                        },
+                                        onSaturationChange = {
+                                            HapticManager.vibrate(
+                                                context,
+                                                HapticManager.EFFECT_TICK
+                                            )
+                                            saturation = it
+                                            viewModel.setBackgroundColor(
+                                                pdfName,
+                                                hsvaToColor(
+                                                    hue,
+                                                    it,
+                                                    value,
+                                                    alpha
                                                 )
-                                                viewModel.copyToClipboard(
-                                                    text = editingColor.toHexString(),
-                                                    label = "?"
+                                            )
+                                        },
+                                        onValueChange = {
+                                            HapticManager.vibrate(
+                                                context,
+                                                HapticManager.EFFECT_TICK
+                                            )
+                                            value = it
+                                            viewModel.setBackgroundColor(
+                                                pdfName,
+                                                hsvaToColor(
+                                                    hue,
+                                                    saturation,
+                                                    it,
+                                                    alpha
                                                 )
-                                            }
-                                        )
+                                            )
+                                        },
+                                        onAlphaChange = {
+                                            HapticManager.vibrate(
+                                                context,
+                                                HapticManager.EFFECT_TICK
+                                            )
+                                            alpha = it
+                                            viewModel.setBackgroundColor(
+                                                pdfName,
+                                                hsvaToColor(
+                                                    hue,
+                                                    saturation,
+                                                    value,
+                                                    it
+                                                )
+                                            )
+                                        },
+                                        modifier = Modifier.padding(24.dp)
                                     )
 
-                                    Spacer(modifier = Modifier.width(24.dp))
-
-                                    TooltipBox(
-                                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-                                            TooltipAnchorPosition.Above
-                                        ),
-                                        tooltip = { PlainTooltip { Text("手动输入背景颜色代码") } },
-                                        state = rememberTooltipState()
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.Center,
+                                        modifier = Modifier.fillMaxWidth()
                                     ) {
-                                        IconButton(onClick = {
-                                            HapticManager.vibrate(
-                                                context,
-                                                HapticManager.EFFECT_CLICK
-                                            )
-                                            isColorInputDialogShow = true
-                                        }) {
-                                            Icon(
-                                                painter = painterResource(R.drawable.ic_pencil),
-                                                contentDescription = null
-                                            )
-                                        }
-                                    }
-
-                                    TooltipBox(
-                                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-                                            TooltipAnchorPosition.Above
-                                        ),
-                                        tooltip = { PlainTooltip { Text("保存当前颜色以便后续调用") } },
-                                        state = rememberTooltipState()
-                                    ) {
-                                        IconButton(onClick = {
-                                            HapticManager.vibrate(
-                                                context,
-                                                HapticManager.EFFECT_CLICK
-                                            )
-                                            viewModel.addColor(editingColor.toHexString())
-                                        }) {
-                                            Icon(
-                                                painter = painterResource(R.drawable.ic_save),
-                                                contentDescription = null
-                                            )
-                                        }
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.height(12.dp))
-                            }
-                        }
-
-                        OperateMode.PAGE -> Column(
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = "对于输出图片的方式进行设置",
-                                modifier = Modifier.padding(12.dp),
-                                fontWeight = FontWeight.Bold
-                            )
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(
-                                    start = 12.dp,
-                                    end = 12.dp
-                                )
-                            ) {
-                                Text(
-                                    text = "模式",
-                                    modifier = Modifier.padding(end = 16.dp),
-                                    fontWeight = FontWeight.Bold
-                                )
-                                val options = listOf("多图", "单张长图")
-                                val toMultiple =
-                                    viewModel.pdfInputList[pdfName]?.toMultiplePictures ?: false
-                                SingleChoiceSegmentedButtonRow(
-                                    modifier = Modifier.weight(1f),
-
-                                    ) {
-                                    options.forEachIndexed { index, label ->
-                                        SegmentedButton(
-                                            selected = when (index) {
-                                                0 -> toMultiple
-                                                1 -> !toMultiple
-                                                else -> false
-                                            },
-                                            onClick = {
-                                                HapticManager.vibrate(
-                                                    context,
-                                                    HapticManager.EFFECT_CLICK
-                                                )
-                                                viewModel.setMultiPage(pdfName, index == 0)
-                                            },
-                                            shape = SegmentedButtonDefaults.itemShape(
-                                                index = index,
-                                                count = options.size
-                                            ),
-                                            colors = SegmentedButtonDefaults.colors(
-                                                activeBorderColor = MaterialTheme.colorScheme.primary,
-                                                inactiveBorderColor = MaterialTheme.colorScheme.primary,
-                                                activeContainerColor = MaterialTheme.colorScheme.primary,
-                                                activeContentColor = MaterialTheme.colorScheme.onPrimary,
-                                                inactiveContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                                inactiveContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        if (editingColor.alpha <= 0.1f || editingColor.isCloseTo(
+                                                other = cardSurfaceColor
                                             )
                                         ) {
-                                            Text(label)
-                                        }
-                                    }
-                                }
-                            }
-                            Spacer(
-                                modifier = Modifier.height(8.dp)
-                            )
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(
-                                    start = 12.dp,
-                                    end = 12.dp
-                                )
-                            ) {
-                                Text(
-                                    text = "对齐",
-                                    modifier = Modifier.padding(end = 16.dp),
-                                    fontWeight = FontWeight.Bold
-                                )
-                                val options = listOf("左对齐", "居中对齐", "右对齐")
-
-                                SingleChoiceSegmentedButtonRow(
-                                    modifier = Modifier.weight(1f),
-
-                                    ) {
-                                    options.forEachIndexed { index, label ->
-                                        SegmentedButton(
-                                            enabled = viewModel.pdfInputList[pdfName]?.stretchMode == 0 &&
-                                                    viewModel.pdfInputList[pdfName]?.toMultiplePictures == false,
-                                            selected = index == viewModel.pdfInputList[pdfName]?.alignMode,
-                                            onClick = {
-                                                HapticManager.vibrate(
-                                                    context,
-                                                    HapticManager.EFFECT_CLICK
-                                                )
-                                                viewModel.setAlignMode(pdfName, index)
-                                            },
-                                            shape = SegmentedButtonDefaults.itemShape(
-                                                index = index,
-                                                count = options.size
-                                            ),
-                                            colors = SegmentedButtonDefaults.colors(
-                                                activeBorderColor = MaterialTheme.colorScheme.primary,
-                                                inactiveBorderColor = MaterialTheme.colorScheme.primary,
-                                                activeContainerColor = MaterialTheme.colorScheme.primary,
-                                                activeContentColor = MaterialTheme.colorScheme.onPrimary,
-                                                inactiveContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                                inactiveContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            Image(
+                                                painter = painterResource(R.drawable.ic_circle),
+                                                contentDescription = null,
+                                                colorFilter = ColorFilter.tint(editingColor),
+                                                modifier = Modifier
+                                                    .size(26.dp)
+                                                    .drawWithContent {
+                                                        drawContent()
+                                                        val strokeWidth = 2.dp.toPx()
+                                                        drawCircle(
+                                                            color = Color.Gray,
+                                                            radius = size.minDimension / 2 - strokeWidth / 2,
+                                                            style = Stroke(width = strokeWidth)
+                                                        )
+                                                    }
                                             )
-                                        ) {
-                                            Text(label)
-                                        }
-                                    }
-                                }
-                            }
-                            Spacer(
-                                modifier = Modifier.height(8.dp)
-                            )
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(
-                                    start = 12.dp,
-                                    end = 12.dp
-                                )
-                            ) {
-                                Text(
-                                    text = "缩放",
-                                    modifier = Modifier.padding(end = 16.dp),
-                                    fontWeight = FontWeight.Bold
-                                )
-                                val options = listOf("原尺寸", "横向等宽", "比例等宽")
-
-                                SingleChoiceSegmentedButtonRow(
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    options.forEachIndexed { index, label ->
-                                        SegmentedButton(
-                                            enabled = viewModel.pdfInputList[pdfName]?.toMultiplePictures == false,
-                                            selected = index == viewModel.pdfInputList[pdfName]?.stretchMode,
-                                            onClick = {
-                                                HapticManager.vibrate(
-                                                    context,
-                                                    HapticManager.EFFECT_CLICK
-                                                )
-                                                viewModel.setStretchMode(pdfName, index)
-                                                if (index != 0) viewModel.setAlignMode(pdfName, 0)
-                                            },
-                                            shape = SegmentedButtonDefaults.itemShape(
-                                                index = index,
-                                                count = options.size
-                                            ),
-                                            colors = SegmentedButtonDefaults.colors(
-                                                activeBorderColor = MaterialTheme.colorScheme.primary,
-                                                inactiveBorderColor = MaterialTheme.colorScheme.primary,
-                                                activeContainerColor = MaterialTheme.colorScheme.primary,
-                                                activeContentColor = MaterialTheme.colorScheme.onPrimary,
-                                                inactiveContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                                inactiveContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        } else {
+                                            Image(
+                                                painter = painterResource(R.drawable.ic_circle),
+                                                contentDescription = null,
+                                                colorFilter = ColorFilter.tint(editingColor),
+                                                modifier = Modifier
+                                                    .size(28.dp)
                                             )
-                                        ) {
-                                            Text(label)
                                         }
-                                    }
-                                }
-                            }
-                            Spacer(
-                                modifier = Modifier.height(8.dp)
-                            )
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(
-                                    start = 12.dp,
-                                    end = 12.dp
-                                )
-                            ) {
-                                Text(
-                                    text = "格式",
-                                    modifier = Modifier.padding(end = 16.dp),
-                                    fontWeight = FontWeight.Bold
-                                )
-                                val options = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                                    listOf("PNG", "JPEG", "WEBP_LOSSY", "WEBP_LOSSLESS")
-                                } else {
-                                    listOf("PNG", "JPEG", "WEBP")
-                                }
-                                FlowRow(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(2.dp),
-                                    verticalArrangement = Arrangement.spacedBy(0.dp),
-                                ) {
-                                    options.forEachIndexed { index, label ->
-                                        val selected =
-                                            index == viewModel.pdfInputList[pdfName]?.format
-                                        FilterChip(
-                                            selected = selected,
-                                            modifier = Modifier,
-                                            onClick = {
-                                                HapticManager.vibrate(
-                                                    context,
-                                                    HapticManager.EFFECT_CLICK
-                                                )
-                                                viewModel.setFormatMode(pdfName, index)
-                                                if (index != 0) viewModel.setAlignMode(pdfName, 0)
-                                            },
-                                            label = { Text(label) },
-                                            shape = if (selected) {
-                                                CircleShape
-                                            } else {
-                                                RoundedCornerShape(8.dp)
-                                            },
-                                            colors = FilterChipDefaults.filterChipColors(
-                                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                                labelColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                                                selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                                            ),
-                                            leadingIcon = if (selected) {
-                                                {
-                                                    Icon(
-                                                        painter = painterResource(R.drawable.ic_check),
-                                                        contentDescription = null,
-                                                        modifier = Modifier.size(FilterChipDefaults.IconSize),
-                                                        tint = MaterialTheme.colorScheme.onPrimary
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = editingColor.toHexString(),
+                                            modifier = Modifier.combinedClickable(
+                                                //interactionSource = remember { MutableInteractionSource() },
+                                                //indication = null,
+                                                onClick = {
+                                                    HapticManager.vibrate(
+                                                        context,
+                                                        HapticManager.EFFECT_CLICK
+                                                    )
+                                                    viewModel.print("MEOW!!!")
+                                                },
+                                                onLongClick = {
+                                                    HapticManager.vibrate(
+                                                        context,
+                                                        HapticManager.EFFECT_CLICK
+                                                    )
+                                                    viewModel.copyToClipboard(
+                                                        text = editingColor.toHexString(),
+                                                        label = "?"
                                                     )
                                                 }
-                                            } else null,
+                                            )
                                         )
+
+                                        Spacer(modifier = Modifier.width(24.dp))
+
+                                        TooltipBox(
+                                            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                                TooltipAnchorPosition.Above
+                                            ),
+                                            tooltip = { PlainTooltip { Text("手动输入背景颜色代码") } },
+                                            state = rememberTooltipState()
+                                        ) {
+                                            IconButton(onClick = {
+                                                HapticManager.vibrate(
+                                                    context,
+                                                    HapticManager.EFFECT_CLICK
+                                                )
+                                                isColorInputDialogShow = true
+                                            }) {
+                                                Icon(
+                                                    painter = painterResource(R.drawable.ic_pencil),
+                                                    contentDescription = null
+                                                )
+                                            }
+                                        }
+
+                                        TooltipBox(
+                                            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                                TooltipAnchorPosition.Above
+                                            ),
+                                            tooltip = { PlainTooltip { Text("保存当前颜色以便后续调用") } },
+                                            state = rememberTooltipState()
+                                        ) {
+                                            IconButton(onClick = {
+                                                HapticManager.vibrate(
+                                                    context,
+                                                    HapticManager.EFFECT_CLICK
+                                                )
+                                                viewModel.addColor(editingColor.toHexString())
+                                            }) {
+                                                Icon(
+                                                    painter = painterResource(R.drawable.ic_save),
+                                                    contentDescription = null
+                                                )
+                                            }
+                                        }
                                     }
+
+                                    Spacer(modifier = Modifier.height(12.dp))
                                 }
                             }
-                            Spacer(
-                                modifier = Modifier.height(8.dp)
-                            )
-                            AnimatedVisibility(
-                                visible = state.format != 0
+
+                            OperateMode.PAGE -> Column(
+                                modifier = Modifier.fillMaxWidth()
                             ) {
+                                Text(
+                                    text = "对于输出图片的方式进行设置",
+                                    modifier = Modifier.padding(12.dp),
+                                    fontWeight = FontWeight.Bold
+                                )
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier.padding(
@@ -800,257 +603,496 @@ fun PDFCard(
                                     )
                                 ) {
                                     Text(
-                                        text = "质量",
+                                        text = "模式",
                                         modifier = Modifier.padding(end = 16.dp),
                                         fontWeight = FontWeight.Bold
                                     )
-                                    Slider(
-                                        value = state.quality.toFloat(),
-                                        onValueChange = {
-                                            HapticManager.vibrate(
-                                                context,
-                                                HapticManager.EFFECT_TICK
-                                            )
-                                            viewModel.setQuality(pdfName, it.roundToInt())
-                                        },
-                                        valueRange = 0f..100f,
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                    Text("  ${state.quality}")
+                                    val options = listOf("多图", "单张长图")
+                                    val toMultiple =
+                                        viewModel.pdfInputList[pdfName]?.toMultiplePictures ?: false
+                                    SingleChoiceSegmentedButtonRow(
+                                        modifier = Modifier.weight(1f),
+
+                                        ) {
+                                        options.forEachIndexed { index, label ->
+                                            SegmentedButton(
+                                                selected = when (index) {
+                                                    0 -> toMultiple
+                                                    1 -> !toMultiple
+                                                    else -> false
+                                                },
+                                                onClick = {
+                                                    HapticManager.vibrate(
+                                                        context,
+                                                        HapticManager.EFFECT_CLICK
+                                                    )
+                                                    viewModel.setMultiPage(pdfName, index == 0)
+                                                },
+                                                shape = SegmentedButtonDefaults.itemShape(
+                                                    index = index,
+                                                    count = options.size
+                                                ),
+                                                colors = SegmentedButtonDefaults.colors(
+                                                    activeBorderColor = MaterialTheme.colorScheme.primary,
+                                                    inactiveBorderColor = MaterialTheme.colorScheme.primary,
+                                                    activeContainerColor = MaterialTheme.colorScheme.primary,
+                                                    activeContentColor = MaterialTheme.colorScheme.onPrimary,
+                                                    inactiveContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                                    inactiveContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                )
+                                            ) {
+                                                Text(label)
+                                            }
+                                        }
+                                    }
                                 }
-                            }
-                            Spacer(
-                                modifier = Modifier.height(12.dp)
-                            )
-                        }
-                        OperateMode.DELETE -> Column(
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = "删除此项？",
-                                modifier = Modifier.padding(
-                                    12.dp
-                                ),
-                                fontWeight = FontWeight.Bold
-                            )
-                            Column(
-                                modifier = Modifier.fillMaxWidth()
-                                    .padding(12.dp)
-                            ){
-                                Text("此操作不可撤销。")
-                                TextButton(
-                                    modifier = Modifier.align(Alignment.End),
-                                    onClick = {
-                                        HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
-                                        viewModel.deletePDF(pdfName)
-                                    },
-                                    colors = ButtonDefaults.textButtonColors(
-                                        containerColor = MaterialTheme.colorScheme.error,
-                                        contentColor = MaterialTheme.colorScheme.onError,
+                                Spacer(
+                                    modifier = Modifier.height(8.dp)
+                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(
+                                        start = 12.dp,
+                                        end = 12.dp
                                     )
                                 ) {
-                                    Text(stringResource(R.string.ok))
+                                    Text(
+                                        text = "对齐",
+                                        modifier = Modifier.padding(end = 16.dp),
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    val options = listOf("左对齐", "居中对齐", "右对齐")
+
+                                    SingleChoiceSegmentedButtonRow(
+                                        modifier = Modifier.weight(1f),
+
+                                        ) {
+                                        options.forEachIndexed { index, label ->
+                                            SegmentedButton(
+                                                enabled = viewModel.pdfInputList[pdfName]?.stretchMode == 0 &&
+                                                        viewModel.pdfInputList[pdfName]?.toMultiplePictures == false,
+                                                selected = index == viewModel.pdfInputList[pdfName]?.alignMode,
+                                                onClick = {
+                                                    HapticManager.vibrate(
+                                                        context,
+                                                        HapticManager.EFFECT_CLICK
+                                                    )
+                                                    viewModel.setAlignMode(pdfName, index)
+                                                },
+                                                shape = SegmentedButtonDefaults.itemShape(
+                                                    index = index,
+                                                    count = options.size
+                                                ),
+                                                colors = SegmentedButtonDefaults.colors(
+                                                    activeBorderColor = MaterialTheme.colorScheme.primary,
+                                                    inactiveBorderColor = MaterialTheme.colorScheme.primary,
+                                                    activeContainerColor = MaterialTheme.colorScheme.primary,
+                                                    activeContentColor = MaterialTheme.colorScheme.onPrimary,
+                                                    inactiveContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                                    inactiveContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                )
+                                            ) {
+                                                Text(label)
+                                            }
+                                        }
+                                    }
+                                }
+                                Spacer(
+                                    modifier = Modifier.height(8.dp)
+                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(
+                                        start = 12.dp,
+                                        end = 12.dp
+                                    )
+                                ) {
+                                    Text(
+                                        text = "缩放",
+                                        modifier = Modifier.padding(end = 16.dp),
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    val options = listOf("原尺寸", "横向等宽", "比例等宽")
+
+                                    SingleChoiceSegmentedButtonRow(
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        options.forEachIndexed { index, label ->
+                                            SegmentedButton(
+                                                enabled = viewModel.pdfInputList[pdfName]?.toMultiplePictures == false,
+                                                selected = index == viewModel.pdfInputList[pdfName]?.stretchMode,
+                                                onClick = {
+                                                    HapticManager.vibrate(
+                                                        context,
+                                                        HapticManager.EFFECT_CLICK
+                                                    )
+                                                    viewModel.setStretchMode(pdfName, index)
+                                                    if (index != 0) viewModel.setAlignMode(
+                                                        pdfName,
+                                                        0
+                                                    )
+                                                },
+                                                shape = SegmentedButtonDefaults.itemShape(
+                                                    index = index,
+                                                    count = options.size
+                                                ),
+                                                colors = SegmentedButtonDefaults.colors(
+                                                    activeBorderColor = MaterialTheme.colorScheme.primary,
+                                                    inactiveBorderColor = MaterialTheme.colorScheme.primary,
+                                                    activeContainerColor = MaterialTheme.colorScheme.primary,
+                                                    activeContentColor = MaterialTheme.colorScheme.onPrimary,
+                                                    inactiveContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                                    inactiveContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                )
+                                            ) {
+                                                Text(label)
+                                            }
+                                        }
+                                    }
+                                }
+                                Spacer(
+                                    modifier = Modifier.height(8.dp)
+                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(
+                                        start = 12.dp,
+                                        end = 12.dp
+                                    )
+                                ) {
+                                    Text(
+                                        text = "格式",
+                                        modifier = Modifier.padding(end = 16.dp),
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    val options =
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                                            listOf("PNG", "JPEG", "WEBP_LOSSY", "WEBP_LOSSLESS")
+                                        } else {
+                                            listOf("PNG", "JPEG", "WEBP")
+                                        }
+                                    FlowRow(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                                        verticalArrangement = Arrangement.spacedBy(0.dp),
+                                    ) {
+                                        options.forEachIndexed { index, label ->
+                                            val selected =
+                                                index == viewModel.pdfInputList[pdfName]?.format
+                                            FilterChip(
+                                                selected = selected,
+                                                modifier = Modifier,
+                                                onClick = {
+                                                    HapticManager.vibrate(
+                                                        context,
+                                                        HapticManager.EFFECT_CLICK
+                                                    )
+                                                    viewModel.setFormatMode(pdfName, index)
+                                                    if (index != 0) viewModel.setAlignMode(
+                                                        pdfName,
+                                                        0
+                                                    )
+                                                },
+                                                label = { Text(label) },
+                                                shape = if (selected) {
+                                                    CircleShape
+                                                } else {
+                                                    RoundedCornerShape(8.dp)
+                                                },
+                                                colors = FilterChipDefaults.filterChipColors(
+                                                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                                    labelColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                                ),
+                                                leadingIcon = if (selected) {
+                                                    {
+                                                        Icon(
+                                                            painter = painterResource(R.drawable.ic_check),
+                                                            contentDescription = null,
+                                                            modifier = Modifier.size(
+                                                                FilterChipDefaults.IconSize
+                                                            ),
+                                                            tint = MaterialTheme.colorScheme.onPrimary
+                                                        )
+                                                    }
+                                                } else null,
+                                            )
+                                        }
+                                    }
+                                }
+                                Spacer(
+                                    modifier = Modifier.height(8.dp)
+                                )
+                                AnimatedVisibility(
+                                    visible = state.format != 0
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.padding(
+                                            start = 12.dp,
+                                            end = 12.dp
+                                        )
+                                    ) {
+                                        Text(
+                                            text = "质量",
+                                            modifier = Modifier.padding(end = 16.dp),
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Slider(
+                                            value = state.quality.toFloat(),
+                                            onValueChange = {
+                                                HapticManager.vibrate(
+                                                    context,
+                                                    HapticManager.EFFECT_TICK
+                                                )
+                                                viewModel.setQuality(pdfName, it.roundToInt())
+                                            },
+                                            valueRange = 0f..100f,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        Text("  ${state.quality}")
+                                    }
+                                }
+                                Spacer(
+                                    modifier = Modifier.height(12.dp)
+                                )
+                            }
+
+                            OperateMode.DELETE -> Column(
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = "删除此项？",
+                                    modifier = Modifier.padding(
+                                        12.dp
+                                    ),
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp)
+                                ) {
+                                    Text("此操作不可撤销。")
+                                    TextButton(
+                                        modifier = Modifier.align(Alignment.End),
+                                        onClick = {
+                                            HapticManager.vibrate(
+                                                context,
+                                                HapticManager.EFFECT_CLICK
+                                            )
+                                            viewModel.deletePDF(pdfName)
+                                        },
+                                        colors = ButtonDefaults.textButtonColors(
+                                            containerColor = MaterialTheme.colorScheme.error,
+                                            contentColor = MaterialTheme.colorScheme.onError,
+                                        )
+                                    ) {
+                                        Text(stringResource(R.string.ok))
+                                    }
                                 }
                             }
+
+                            else -> {}
                         }
-                        else -> {}
                     }
                 }
-            }
 
-            if (isColorInputDialogShow) {
-                var inputText by remember(editingColor) {
-                    mutableStateOf(editingColor.toHexString())
-                }
+                if (isColorInputDialogShow) {
+                    var inputText by remember(editingColor) {
+                        mutableStateOf(editingColor.toHexString())
+                    }
 
-                LaunchedEffect(true) {
-                    inputText = editingColor.toHexString()
-                }
+                    LaunchedEffect(true) {
+                        inputText = editingColor.toHexString()
+                    }
 
-                val parsedColor = inputText.toArgbColor()
-                val hasError = !inputText.startsWith("#") || parsedColor == null
+                    val parsedColor = inputText.toArgbColor()
+                    val hasError = !inputText.startsWith("#") || parsedColor == null
 
-                AlertDialog(
-                    onDismissRequest = { isColorInputDialogShow = false },
-                    title = {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = "自定义背景色",
-                                modifier = Modifier.weight(1f),
-                                maxLines = 1
-                            )
+                    AlertDialog(
+                        onDismissRequest = { isColorInputDialogShow = false },
+                        title = {
                             Row(
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                modifier = Modifier.fillMaxWidth()
                             ) {
-                                topColors.forEach {
-                                    it.toArgbColor()?.let { color ->
-                                        if (color.alpha <= 0.1f || color.isCloseTo(other = dialogSurfaceColor)) {
-                                            TooltipBox(
-                                                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-                                                    TooltipAnchorPosition.Above
-                                                ),
-                                                tooltip = { PlainTooltip { Text(color.toHexString()) } },
-                                                state = rememberTooltipState(),
-                                            ) {
-                                                Image(
-                                                    painter = painterResource(R.drawable.ic_circle),
-                                                    contentDescription = null,
-                                                    colorFilter = ColorFilter.tint(color),
-                                                    modifier = Modifier
-                                                        .size(26.dp)
-                                                        .drawWithContent {
-                                                            drawContent()
-                                                            val strokeWidth = 2.dp.toPx()
-                                                            drawCircle(
-                                                                color = Color.Gray,
-                                                                radius = size.minDimension / 2 - strokeWidth / 2,
-                                                                style = Stroke(width = strokeWidth)
-                                                            )
-                                                        }
-                                                        .clickable(
-                                                            interactionSource = interactionSource,
-                                                            indication = null
-                                                        ) {
-                                                            HapticManager.vibrate(
-                                                                context,
-                                                                HapticManager.EFFECT_TICK
-                                                            )
-                                                            inputText = color.toHexString()
-                                                        }
-                                                )
-                                            }
-                                        } else {
-                                            TooltipBox(
-                                                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-                                                    TooltipAnchorPosition.Above
-                                                ),
-                                                tooltip = { PlainTooltip { Text(color.toHexString()) } },
-                                                state = rememberTooltipState(),
-                                            ) {
-                                                Image(
-                                                    painter = painterResource(R.drawable.ic_circle),
-                                                    contentDescription = null,
-                                                    colorFilter = ColorFilter.tint(color),
-                                                    modifier = Modifier
-                                                        .size(28.dp)
-                                                        .clickable(
-                                                            interactionSource = interactionSource,
-                                                            indication = null
-                                                        ) {
-                                                            HapticManager.vibrate(
-                                                                context,
-                                                                HapticManager.EFFECT_TICK
-                                                            )
-                                                            inputText = color.toHexString()
-                                                        }
-                                                )
+                                Text(
+                                    text = "自定义背景色",
+                                    modifier = Modifier.weight(1f),
+                                    maxLines = 1
+                                )
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    topColors.forEach {
+                                        it.toArgbColor()?.let { color ->
+                                            if (color.alpha <= 0.1f || color.isCloseTo(other = dialogSurfaceColor)) {
+                                                TooltipBox(
+                                                    positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                                        TooltipAnchorPosition.Above
+                                                    ),
+                                                    tooltip = { PlainTooltip { Text(color.toHexString()) } },
+                                                    state = rememberTooltipState(),
+                                                ) {
+                                                    Image(
+                                                        painter = painterResource(R.drawable.ic_circle),
+                                                        contentDescription = null,
+                                                        colorFilter = ColorFilter.tint(color),
+                                                        modifier = Modifier
+                                                            .size(26.dp)
+                                                            .drawWithContent {
+                                                                drawContent()
+                                                                val strokeWidth = 2.dp.toPx()
+                                                                drawCircle(
+                                                                    color = Color.Gray,
+                                                                    radius = size.minDimension / 2 - strokeWidth / 2,
+                                                                    style = Stroke(width = strokeWidth)
+                                                                )
+                                                            }
+                                                            .clickable(
+                                                                interactionSource = interactionSource,
+                                                                indication = null
+                                                            ) {
+                                                                HapticManager.vibrate(
+                                                                    context,
+                                                                    HapticManager.EFFECT_TICK
+                                                                )
+                                                                inputText = color.toHexString()
+                                                            }
+                                                    )
+                                                }
+                                            } else {
+                                                TooltipBox(
+                                                    positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                                        TooltipAnchorPosition.Above
+                                                    ),
+                                                    tooltip = { PlainTooltip { Text(color.toHexString()) } },
+                                                    state = rememberTooltipState(),
+                                                ) {
+                                                    Image(
+                                                        painter = painterResource(R.drawable.ic_circle),
+                                                        contentDescription = null,
+                                                        colorFilter = ColorFilter.tint(color),
+                                                        modifier = Modifier
+                                                            .size(28.dp)
+                                                            .clickable(
+                                                                interactionSource = interactionSource,
+                                                                indication = null
+                                                            ) {
+                                                                HapticManager.vibrate(
+                                                                    context,
+                                                                    HapticManager.EFFECT_TICK
+                                                                )
+                                                                inputText = color.toHexString()
+                                                            }
+                                                    )
+                                                }
                                             }
                                         }
                                     }
                                 }
                             }
-                        }
-                    },
-                    text = {
-                        OutlinedTextField(
-                            value = inputText,
-                            modifier = Modifier.fillMaxWidth(),
-                            onValueChange = {
-                                HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
-                                inputText = it.take(10)
-                            },
-                            label = { Text("十六进制颜色") },
-                            placeholder = { Text("#AARRGGBB") },
-                            singleLine = true,
-                            isError = hasError,
-                            supportingText = {
-                                if (hasError) {
-                                    Text("支持 #AARRGGBB | #RRGGBB")
-                                }
-                            },
-                            trailingIcon = {
-                                parsedColor?.let {
-                                    if (it.alpha <= 0.1f || it.isCloseTo(other = dialogSurfaceColor)) {
-                                        Image(
-                                            painter = painterResource(R.drawable.ic_circle),
-                                            contentDescription = null,
-                                            colorFilter = ColorFilter.tint(parsedColor),
-                                            modifier = Modifier
-                                                .size(22.dp)
-                                                .drawWithContent {
-                                                    drawContent()
-                                                    val strokeWidth = 2.dp.toPx()
-                                                    drawCircle(
-                                                        color = Color.Gray,
-                                                        radius = size.minDimension / 2 - strokeWidth / 2,
-                                                        style = Stroke(width = strokeWidth)
-                                                    )
-                                                }
-                                                .clickable(
-                                                    interactionSource = interactionSource,
-                                                    indication = null
-                                                ) {
-                                                    HapticManager.vibrate(
-                                                        context,
-                                                        HapticManager.EFFECT_TICK
-                                                    )
-                                                    inputText = parsedColor.toHexString()
-                                                }
-                                        )
-                                    } else {
-                                        Image(
-                                            painter = painterResource(R.drawable.ic_circle),
-                                            contentDescription = null,
-                                            colorFilter = ColorFilter.tint(parsedColor),
-                                            modifier = Modifier
-                                                .size(24.dp)
-                                                .clickable(
-                                                    interactionSource = interactionSource,
-                                                    indication = null
-                                                ) {
-                                                    HapticManager.vibrate(
-                                                        context,
-                                                        HapticManager.EFFECT_TICK
-                                                    )
-                                                    inputText = parsedColor.toHexString()
-                                                }
-                                        )
+                        },
+                        text = {
+                            OutlinedTextField(
+                                value = inputText,
+                                modifier = Modifier.fillMaxWidth(),
+                                onValueChange = {
+                                    HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
+                                    inputText = it.take(10)
+                                },
+                                label = { Text("十六进制颜色") },
+                                placeholder = { Text("#AARRGGBB") },
+                                singleLine = true,
+                                isError = hasError,
+                                supportingText = {
+                                    if (hasError) {
+                                        Text("支持 #AARRGGBB | #RRGGBB")
+                                    }
+                                },
+                                trailingIcon = {
+                                    parsedColor?.let {
+                                        if (it.alpha <= 0.1f || it.isCloseTo(other = dialogSurfaceColor)) {
+                                            Image(
+                                                painter = painterResource(R.drawable.ic_circle),
+                                                contentDescription = null,
+                                                colorFilter = ColorFilter.tint(parsedColor),
+                                                modifier = Modifier
+                                                    .size(22.dp)
+                                                    .drawWithContent {
+                                                        drawContent()
+                                                        val strokeWidth = 2.dp.toPx()
+                                                        drawCircle(
+                                                            color = Color.Gray,
+                                                            radius = size.minDimension / 2 - strokeWidth / 2,
+                                                            style = Stroke(width = strokeWidth)
+                                                        )
+                                                    }
+                                                    .clickable(
+                                                        interactionSource = interactionSource,
+                                                        indication = null
+                                                    ) {
+                                                        HapticManager.vibrate(
+                                                            context,
+                                                            HapticManager.EFFECT_TICK
+                                                        )
+                                                        inputText = parsedColor.toHexString()
+                                                    }
+                                            )
+                                        } else {
+                                            Image(
+                                                painter = painterResource(R.drawable.ic_circle),
+                                                contentDescription = null,
+                                                colorFilter = ColorFilter.tint(parsedColor),
+                                                modifier = Modifier
+                                                    .size(24.dp)
+                                                    .clickable(
+                                                        interactionSource = interactionSource,
+                                                        indication = null
+                                                    ) {
+                                                        HapticManager.vibrate(
+                                                            context,
+                                                            HapticManager.EFFECT_TICK
+                                                        )
+                                                        inputText = parsedColor.toHexString()
+                                                    }
+                                            )
+                                        }
                                     }
                                 }
-                            }
-                        )
-                    },
-                    confirmButton = {
-                        TextButton(
-                            enabled = parsedColor != null,
-                            onClick = {
-                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
-                                parsedColor?.let {
-                                    viewModel.setBackgroundColor(pdfName, it)
-                                    val hsv = it.toHsva()
-                                    hue = hsv.h
-                                    saturation = hsv.s
-                                    value = hsv.v
-                                    alpha = hsv.a
+                            )
+                        },
+                        confirmButton = {
+                            TextButton(
+                                enabled = parsedColor != null,
+                                onClick = {
+                                    HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
+                                    parsedColor?.let {
+                                        viewModel.setBackgroundColor(pdfName, it)
+                                        val hsv = it.toHsva()
+                                        hue = hsv.h
+                                        saturation = hsv.s
+                                        value = hsv.v
+                                        alpha = hsv.a
+                                    }
+                                    isColorInputDialogShow = false
                                 }
+                            ) { Text(stringResource(R.string.ok)) }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = {
+                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
                                 isColorInputDialogShow = false
+                            }) {
+                                Text(stringResource(R.string.cancel))
                             }
-                        ) { Text(stringResource(R.string.ok)) }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = {
-                            HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
-                            isColorInputDialogShow = false
-                        }) {
-                            Text(stringResource(R.string.cancel))
                         }
-                    }
-                )
+                    )
+                }
             }
         }
     }

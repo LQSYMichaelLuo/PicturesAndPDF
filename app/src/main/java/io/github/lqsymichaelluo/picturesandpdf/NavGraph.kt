@@ -1,7 +1,9 @@
 package io.github.lqsymichaelluo.picturesandpdf
 
 import android.view.DragEvent
+import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
@@ -24,7 +26,9 @@ fun BottomNavGraph(
     onImportPDF: () -> Unit,
     requestDragAndDropPermission: (DragEvent) -> Unit,
     releaseDragAndDropPermission: () -> Unit,
-    isPhoneLandscape: Boolean
+    isPhoneLandscape: Boolean,
+    sharedTransitionScope: SharedTransitionScope,
+    navAnimatedVisibilityScope: AnimatedVisibilityScope
 ) {
     SharedTransitionLayout {
         NavHost(
@@ -75,7 +79,9 @@ fun BottomNavGraph(
                     imagePreviewViewModel = imagePreviewViewModel,
                     onImportPicture = onImportPicture,
                     requestDragAndDropPermission = requestDragAndDropPermission,
-                    releaseDragAndDropPermission = releaseDragAndDropPermission
+                    releaseDragAndDropPermission = releaseDragAndDropPermission,
+                    sharedTransitionScope = sharedTransitionScope,
+                    navAnimatedVisibilityScope = navAnimatedVisibilityScope
                 )
             }
             composable(
@@ -85,6 +91,8 @@ fun BottomNavGraph(
                     viewModel = viewModel,
                     isPhoneLandscape = isPhoneLandscape,
                     rootNavController = rootNavController,
+                    sharedTransitionScope = sharedTransitionScope,
+                    navAnimatedVisibilityScope = navAnimatedVisibilityScope
                 )
             }
         }
@@ -102,7 +110,9 @@ fun SideNavGraph(
     onImportPDF: () -> Unit,
     requestDragAndDropPermission: (DragEvent) -> Unit,
     releaseDragAndDropPermission: () -> Unit,
-    isPhoneLandscape: Boolean
+    isPhoneLandscape: Boolean,
+    sharedTransitionScope: SharedTransitionScope,
+    navAnimatedVisibilityScope: AnimatedVisibilityScope
 ) {
     SharedTransitionLayout {
         NavHost(
@@ -153,7 +163,9 @@ fun SideNavGraph(
                     imagePreviewViewModel = imagePreviewViewModel,
                     onImportPicture = onImportPicture,
                     requestDragAndDropPermission = requestDragAndDropPermission,
-                    releaseDragAndDropPermission = releaseDragAndDropPermission
+                    releaseDragAndDropPermission = releaseDragAndDropPermission,
+                    sharedTransitionScope = sharedTransitionScope,
+                    navAnimatedVisibilityScope = navAnimatedVisibilityScope
                 )
             }
             composable(
@@ -163,6 +175,8 @@ fun SideNavGraph(
                     viewModel = viewModel,
                     isPhoneLandscape = isPhoneLandscape,
                     rootNavController = rootNavController,
+                    sharedTransitionScope = sharedTransitionScope,
+                    navAnimatedVisibilityScope = navAnimatedVisibilityScope
                 )
             }
         }

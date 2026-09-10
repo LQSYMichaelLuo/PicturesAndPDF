@@ -3,6 +3,8 @@ package io.github.lqsymichaelluo.picturesandpdf
 import android.content.Intent
 import android.view.DragEvent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.expandHorizontally
@@ -119,6 +121,8 @@ fun MainScreen(
     onImportPDF: () -> Unit,
     requestDragAndDropPermission: (DragEvent) -> Unit,
     releaseDragAndDropPermission: () -> Unit,
+    sharedTransitionScope: SharedTransitionScope,
+    navAnimatedVisibilityScope: AnimatedVisibilityScope
 ) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -493,7 +497,9 @@ fun MainScreen(
                     onImportPDF = onImportPDF,
                     requestDragAndDropPermission = requestDragAndDropPermission,
                     releaseDragAndDropPermission = releaseDragAndDropPermission,
-                    isPhoneLandscape = true
+                    isPhoneLandscape = true,
+                    sharedTransitionScope = sharedTransitionScope,
+                    navAnimatedVisibilityScope = navAnimatedVisibilityScope
                 )
             }
         }
@@ -806,7 +812,9 @@ fun MainScreen(
                 onImportPDF = onImportPDF,
                 requestDragAndDropPermission = requestDragAndDropPermission,
                 releaseDragAndDropPermission = releaseDragAndDropPermission,
-                isPhoneLandscape = false
+                isPhoneLandscape = false,
+                sharedTransitionScope = sharedTransitionScope,
+                navAnimatedVisibilityScope = navAnimatedVisibilityScope
             )
         }
 }

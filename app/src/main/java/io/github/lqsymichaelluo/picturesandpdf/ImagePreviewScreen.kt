@@ -3,6 +3,8 @@ package io.github.lqsymichaelluo.picturesandpdf
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.os.VibrationEffect
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.Image
@@ -74,7 +76,9 @@ fun ImagePreviewScreen(
     currentIndex: Int = 0,
     onBack: () -> Unit = {},
     imagePreviewViewModel: ImagePreviewViewModel,
-    navController: NavController
+    navController: NavController,
+    sharedTransitionScope: SharedTransitionScope,
+    navAnimatedVisibilityScope: AnimatedVisibilityScope
 ) {
     val context = LocalContext.current
     val imageID = "image_$currentIndex"
@@ -115,242 +119,249 @@ fun ImagePreviewScreen(
 
     fun getScale(page: Int) = pageScales.getOrPut(page) { Animatable(1f) }
     fun getOffset(page: Int) = pageOffsets.getOrPut(page) { 0f to 0f }
+    with(sharedTransitionScope) {
+        Scaffold(
+            modifier = Modifier
+                .focusRequester(focusRequester)
+                .focusable()
+                .onPreviewKeyEvent { event ->
+                    val currentPage = pagerState.currentPage
+                    val currentScale = getScale(currentPage)
+                    val (currentOffsetX, currentOffsetY) = getOffset(currentPage)
+                    val step = 100f
 
-    Scaffold(
-        modifier = Modifier
-            .focusRequester(focusRequester)
-            .focusable()
-            .onPreviewKeyEvent { event ->
-                val currentPage = pagerState.currentPage
-                val currentScale = getScale(currentPage)
-                val (currentOffsetX, currentOffsetY) = getOffset(currentPage)
-                val step = 100f
+                    val isZoomed = currentScale.value > 1.14f
 
-                val isZoomed = currentScale.value > 1.14f
-
-                when {
-                    event.matches(
-                        key = Key.B,
-                        ctrl = true
-                    ) || event.matches(key = Key.Backspace) -> {
-                        onBack()
-                        true
-                    }
-                    event.matches(key = Key.G, ctrl = true, alt = true) -> {
-                        toggleColorState()
-                        true
-                    }
-                    event.matches(key = Key.DirectionLeft) -> {
-                        if (isZoomed) {
-                            HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
-                            pageOffsets[currentPage] = (currentOffsetX + step) to currentOffsetY
-                        } else {
-                            scope.launch { pagerState.animateScrollToPage(currentPage - 1) }
+                    when {
+                        event.matches(
+                            key = Key.B,
+                            ctrl = true
+                        ) -> {
+                            onBack()
+                            true
                         }
-                        true
-                    }
 
-                    event.matches(key = Key.DirectionRight) -> {
-                        if (isZoomed) {
-                            HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
-                            pageOffsets[currentPage] = (currentOffsetX - step) to currentOffsetY
-                        } else {
-                            scope.launch { pagerState.animateScrollToPage(currentPage + 1) }
+                        event.matches(key = Key.G, ctrl = true, alt = true) -> {
+                            toggleColorState()
+                            true
                         }
-                        true
-                    }
 
-                    event.matches(key = Key.DirectionDown) -> {
-                        if (isZoomed) {
-                            HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
-                            pageOffsets[currentPage] = currentOffsetX to (currentOffsetY - step)
-                        }
-                        true
-                    }
-
-                    event.matches(key = Key.DirectionUp) -> {
-                        if (isZoomed) {
-                            HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
-                            pageOffsets[currentPage] = currentOffsetX to (currentOffsetY + step)
-                        }
-                        true
-                    }
-
-                    event.matches(key = Key.RightBracket, ctrl = true) -> {
-                        HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
-                        scope.launch {
-                            val target = (currentScale.value * 1.25f).fastCoerceIn(0.6f, 35f)
-                            currentScale.animateTo(target)
-                        }
-                        true
-                    }
-
-                    event.matches(key = Key.LeftBracket, ctrl = true) -> {
-                        HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
-                        scope.launch {
-                            val target = (currentScale.value * 0.8f).fastCoerceIn(0.6f, 35f)
-                            currentScale.animateTo(target)
-                            if (currentScale.value <= 1.05f) {
-                                pageOffsets[currentPage] = 0f to 0f
+                        event.matches(key = Key.DirectionLeft) -> {
+                            if (isZoomed) {
+                                HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
+                                pageOffsets[currentPage] = (currentOffsetX + step) to currentOffsetY
+                            } else {
+                                scope.launch { pagerState.animateScrollToPage(currentPage - 1) }
                             }
+                            true
                         }
-                        if (currentScale.value <= 0.65f) {
-                            if (!imagePreviewViewModel.imagePreviewList[pdfName]!!.hasTriggeredSort) {
-                                imagePreviewViewModel.setTriggerSort(pdfName, triggered = true)
-                                navController.navigate("image_sorting/$pdfName/0")
-                                imagePreviewViewModel.setTriggerPreview(
-                                    pdfName = pdfName,
-                                    triggered = false
+
+                        event.matches(key = Key.DirectionRight) -> {
+                            if (isZoomed) {
+                                HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
+                                pageOffsets[currentPage] = (currentOffsetX - step) to currentOffsetY
+                            } else {
+                                scope.launch { pagerState.animateScrollToPage(currentPage + 1) }
+                            }
+                            true
+                        }
+
+                        event.matches(key = Key.DirectionDown) -> {
+                            if (isZoomed) {
+                                HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
+                                pageOffsets[currentPage] = currentOffsetX to (currentOffsetY - step)
+                            }
+                            true
+                        }
+
+                        event.matches(key = Key.DirectionUp) -> {
+                            if (isZoomed) {
+                                HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
+                                pageOffsets[currentPage] = currentOffsetX to (currentOffsetY + step)
+                            }
+                            true
+                        }
+
+                        event.matches(key = Key.RightBracket, ctrl = true) -> {
+                            HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
+                            scope.launch {
+                                val target = (currentScale.value * 1.25f).fastCoerceIn(0.6f, 35f)
+                                currentScale.animateTo(target)
+                            }
+                            true
+                        }
+
+                        event.matches(key = Key.LeftBracket, ctrl = true) -> {
+                            HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
+                            scope.launch {
+                                val target = (currentScale.value * 0.8f).fastCoerceIn(0.6f, 35f)
+                                currentScale.animateTo(target)
+                                if (currentScale.value <= 1.05f) {
+                                    pageOffsets[currentPage] = 0f to 0f
+                                }
+                            }
+                            if (currentScale.value <= 0.65f) {
+                                if (!imagePreviewViewModel.imagePreviewList[pdfName]!!.hasTriggeredSort) {
+                                    imagePreviewViewModel.setTriggerSort(pdfName, triggered = true)
+                                    navController.navigate("image_sorting/$pdfName/0")
+                                    imagePreviewViewModel.setTriggerPreview(
+                                        pdfName = pdfName,
+                                        triggered = false
+                                    )
+                                }
+                            }
+                            true
+                        }
+
+                        else -> false
+                    }
+                },
+
+            containerColor = containerColor,
+            topBar = {
+                TopAppBar(
+                    title = { Text("图片预览", color = Color.White) },
+                    navigationIcon = {
+                        TooltipBox(
+                            positionProvider = rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Below
+                            ),
+                            tooltip = {
+                                PlainTooltip { Text(stringResource(R.string.back)) }
+                            },
+                            state = rememberTooltipState()
+                        ) {
+                            IconButton(onClick = {
+                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
+                                onBack()
+                            }) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_arrow_back),
+                                    contentDescription = null,
+                                    tint = Color.White
                                 )
                             }
                         }
-                        true
-                    }
-
-                    else -> false
-                }
-            },
-
-        containerColor = containerColor,
-        topBar = {
-            TopAppBar(
-                title = { Text("图片预览", color = Color.White) },
-                navigationIcon = {
-                    TooltipBox(
-                        positionProvider = rememberTooltipPositionProvider(
-                            TooltipAnchorPosition.Below
-                        ),
-                        tooltip = {
-                            PlainTooltip { Text(stringResource(R.string.back)) }
-                        },
-                        state = rememberTooltipState()
-                    ) {
-                        IconButton(onClick = {
-                            HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
-                            onBack()
-                        }) {
-                            Icon(
-                                painter = painterResource(R.drawable.ic_arrow_back),
-                                contentDescription = null,
-                                tint = Color.White
+                    },
+                    actions = {
+                        TooltipBox(
+                            positionProvider = rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Below
+                            ),
+                            tooltip = {
+                                PlainTooltip { Text("缩放程度") }
+                            },
+                            state = rememberTooltipState()
+                        ) {
+                            Text(
+                                "%.0f%%  ".format(getScale(pagerState.currentPage).value * 100),
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         }
-                    }
-                },
-                actions = {
-                    TooltipBox(
-                        positionProvider = rememberTooltipPositionProvider(
-                            TooltipAnchorPosition.Below
-                        ),
-                        tooltip = {
-                            PlainTooltip { Text("缩放程度") }
-                        },
-                        state = rememberTooltipState()
-                    ) {
-                        Text(
-                            "%.0f%%  ".format(getScale(pagerState.currentPage).value * 100),
-                            color = MaterialTheme.colorScheme.onSurface
+                        TooltipBox(
+                            positionProvider = rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Below
+                            ),
+                            tooltip = {
+                                PlainTooltip { Text("给图片组排序") }
+                            },
+                            state = rememberTooltipState()
+                        ) {
+                            IconButton(
+                                onClick = {
+                                    HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
+                                    imagePreviewViewModel.setTriggerSort(
+                                        pdfName = pdfName,
+                                        triggered = true
+                                    )
+                                    navController.navigate("image_sorting/$pdfName/0")
+                                    imagePreviewViewModel.setTriggerPreview(
+                                        pdfName = pdfName,
+                                        triggered = false
+                                    )
+                                }
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_sort),
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+                        TooltipBox(
+                            positionProvider = rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Below
+                            ),
+                            tooltip = {
+                                PlainTooltip { Text("转换底色") }
+                            },
+                            state = rememberTooltipState()
+                        ) {
+                            IconButton(onClick = {
+                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
+                                toggleColorState()
+                            }) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_change),
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Black.copy(alpha = 0.45f)
+                    )
+                )
+            }
+        ) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                if (bitmapList != null) {
+                    var currentPageScale by remember { mutableFloatStateOf(1f) }
+
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier.fillMaxSize(),
+                        key = { System.identityHashCode(bitmapList[it]) },
+                        userScrollEnabled = getScale(pagerState.currentPage).value <= 1.14f
+                    ) { page ->
+                        val scale = getScale(page)
+                        val (offsetX, offsetY) = getOffset(page)
+
+                        PreviewPage(
+                            source = bitmapList[page],
+                            modifier = Modifier.fillMaxSize()
+                                .sharedElement(
+                                    sharedContentState = rememberSharedContentState(key = "$pdfName-$page"),
+                                    animatedVisibilityScope = navAnimatedVisibilityScope
+                                ),
+                            scale = scale,
+                            offsetX = offsetX,
+                            offsetY = offsetY,
+                            onOffsetChange = { x, y -> pageOffsets[page] = x to y },
+                            onScaleChanged = { newScale ->
+                                HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
+                                if (page == pagerState.currentPage) {
+                                    currentPageScale = newScale
+                                }
+                            },
+                            onPinchClosed = {
+                                if (!imagePreviewViewModel.imagePreviewList[pdfName]!!.hasTriggeredSort) {
+                                    imagePreviewViewModel.setTriggerSort(pdfName, triggered = true)
+                                    navController.navigate("image_sorting/$pdfName/0")
+                                    imagePreviewViewModel.setTriggerPreview(
+                                        pdfName = pdfName,
+                                        triggered = false
+                                    )
+                                }
+                            }
                         )
                     }
-                    TooltipBox(
-                        positionProvider = rememberTooltipPositionProvider(
-                            TooltipAnchorPosition.Below
-                        ),
-                        tooltip = {
-                            PlainTooltip { Text("给图片组排序") }
-                        },
-                        state = rememberTooltipState()
-                    ) {
-                        IconButton(
-                            onClick = {
-                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
-                                imagePreviewViewModel.setTriggerSort(
-                                    pdfName = pdfName,
-                                    triggered = true
-                                )
-                                navController.navigate("image_sorting/$pdfName/0")
-                                imagePreviewViewModel.setTriggerPreview(
-                                    pdfName = pdfName,
-                                    triggered = false
-                                )
-                            }
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.ic_sort),
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    }
-                    TooltipBox(
-                        positionProvider = rememberTooltipPositionProvider(
-                            TooltipAnchorPosition.Below
-                        ),
-                        tooltip = {
-                            PlainTooltip { Text("转换底色") }
-                        },
-                        state = rememberTooltipState()
-                    ) {
-                        IconButton(onClick = {
-                            HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
-                            toggleColorState()
-                        }) {
-                            Icon(
-                                painter = painterResource(R.drawable.ic_change),
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Black.copy(alpha = 0.45f)
-                )
-            )
-        }
-    ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            if (bitmapList != null) {
-                var currentPageScale by remember { mutableFloatStateOf(1f) }
 
-                HorizontalPager(
-                    state = pagerState,
-                    modifier = Modifier.fillMaxSize(),
-                    key = { System.identityHashCode(bitmapList[it]) },
-                    userScrollEnabled = getScale(pagerState.currentPage).value <= 1.14f
-                ) { page ->
-                    val scale = getScale(page)
-                    val (offsetX, offsetY) = getOffset(page)
-
-                    PreviewPage(
-                        source = bitmapList[page],
-                        modifier = Modifier.fillMaxSize(),
-                        scale = scale,
-                        offsetX = offsetX,
-                        offsetY = offsetY,
-                        onOffsetChange = { x, y -> pageOffsets[page] = x to y },
-                        onScaleChanged = { newScale ->
-                            HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
-                            if (page == pagerState.currentPage) {
-                                currentPageScale = newScale
-                            }
-                        },
-                        onPinchClosed = {
-                            if (!imagePreviewViewModel.imagePreviewList[pdfName]!!.hasTriggeredSort) {
-                                imagePreviewViewModel.setTriggerSort(pdfName, triggered = true)
-                                navController.navigate("image_sorting/$pdfName/0")
-                                imagePreviewViewModel.setTriggerPreview(
-                                    pdfName = pdfName,
-                                    triggered = false
-                                )
-                            }
-                        }
-                    )
                 }
-
             }
         }
     }

@@ -95,7 +95,6 @@ fun SettingsScreen(
             .onPreviewKeyEvent { event ->
                 if (
                     event.matches(key = Key.B, ctrl = true)
-                    || event.matches(key = Key.Backspace)
                 ) {
                     activity?.finish()
                     true

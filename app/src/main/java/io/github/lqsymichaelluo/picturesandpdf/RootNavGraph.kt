@@ -37,7 +37,9 @@ fun RootNavGraph(
                     requestDragAndDropPermission = requestDragAndDropPermission,
                     releaseDragAndDropPermission = releaseDragAndDropPermission,
                     rootNavController = navController,
-                    imagePreviewViewModel = imagePreviewViewModel
+                    imagePreviewViewModel = imagePreviewViewModel,
+                    sharedTransitionScope = this@SharedTransitionLayout,
+                    navAnimatedVisibilityScope = this@composable
                 )
             }
             composable(image_preview_id) {
@@ -50,6 +52,8 @@ fun RootNavGraph(
                         pdfName = pdfName,
                         currentIndex = index,
                         imagePreviewViewModel = imagePreviewViewModel,
+                        sharedTransitionScope = this@SharedTransitionLayout,
+                        navAnimatedVisibilityScope = this@composable,
                         onBack = {
                             navController.popBackStack()
                             imagePreviewViewModel.imagePreviewList[pdfName]
@@ -82,6 +86,8 @@ fun RootNavGraph(
                         },
                         imagePreviewViewModel = imagePreviewViewModel,
                         viewModel = viewModel,
+                        sharedTransitionScope = this@SharedTransitionLayout,
+                        navAnimatedVisibilityScope = this@composable,
                         onImportPicture = onAddPicture,
                         requestDragAndDropPermission = requestDragAndDropPermission,
                         releaseDragAndDropPermission = releaseDragAndDropPermission,
@@ -94,6 +100,8 @@ fun RootNavGraph(
                     PDFPreviewScreen(
                         pdfName = name,
                         pdfPreviewViewModel = pdfPreviewViewModel,
+                        sharedTransitionScope = this@SharedTransitionLayout,
+                        navAnimatedVisibilityScope = this@composable,
                         onBack = {
                             navController.popBackStack()
                         },

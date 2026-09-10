@@ -1,5 +1,7 @@
 package io.github.lqsymichaelluo.picturesandpdf
 
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Box
@@ -36,7 +38,9 @@ import java.io.File
 fun PDFPreviewScreen(
     pdfName: String,
     pdfPreviewViewModel: PdfPreviewViewModel,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    sharedTransitionScope: SharedTransitionScope,
+    navAnimatedVisibilityScope: AnimatedVisibilityScope
 ) {
     val context = LocalContext.current
     val file = remember(pdfName) { File(context.cacheDir, pdfName) }
@@ -64,82 +68,85 @@ fun PDFPreviewScreen(
             else -> ImagePreviewBackgroundColorState.Black
         }
     }
-
-    Scaffold(
-        containerColor = containerColor,
-        modifier = Modifier.nestedScroll(
-            scrollBehavior.nestedScrollConnection
-        ),
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = pdfName,
-                        modifier = Modifier.basicMarquee()
-                    )
-                },
-                scrollBehavior = scrollBehavior,
-                navigationIcon = {
-                    TooltipBox(
-                        positionProvider = rememberTooltipPositionProvider(
-                            TooltipAnchorPosition.Below
-                        ),
-                        tooltip = {
-                            PlainTooltip { Text(stringResource(R.string.back)) }
-                        },
-                        state = rememberTooltipState()
-                    ) {
-                        IconButton(onClick = {
-                            HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
-                            onBack()
-                        }) {
-                            Icon(
-                                painter = painterResource(R.drawable.ic_arrow_back),
-                                contentDescription = null,
-                            )
-                        }
-                    }
-                },
-                actions = {
-                    TooltipBox(
-                        positionProvider = rememberTooltipPositionProvider(
-                            TooltipAnchorPosition.Below
-                        ),
-                        tooltip = {
-                            PlainTooltip { Text("转换底色") }
-                        },
-                        state = rememberTooltipState()
-                    ) {
-                        IconButton(
-                            onClick = {
-                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
-                                toggleColorState()
-                            }
+    with (sharedTransitionScope) {
+        Scaffold(
+            containerColor = containerColor,
+            modifier = Modifier.nestedScroll(
+                scrollBehavior.nestedScrollConnection
+            ),
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            text = pdfName,
+                            modifier = Modifier.sharedElement(
+                                    sharedContentState = rememberSharedContentState(key = pdfName),
+                                    animatedVisibilityScope = navAnimatedVisibilityScope
+                                ).basicMarquee()
+                        )
+                    },
+                    scrollBehavior = scrollBehavior,
+                    navigationIcon = {
+                        TooltipBox(
+                            positionProvider = rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Below
+                            ),
+                            tooltip = {
+                                PlainTooltip { Text(stringResource(R.string.back)) }
+                            },
+                            state = rememberTooltipState()
                         ) {
-                            Icon(
-                                painter = painterResource(R.drawable.ic_change),
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurface
-                            )
+                            IconButton(onClick = {
+                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
+                                onBack()
+                            }) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_arrow_back),
+                                    contentDescription = null,
+                                )
+                            }
+                        }
+                    },
+                    actions = {
+                        TooltipBox(
+                            positionProvider = rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Below
+                            ),
+                            tooltip = {
+                                PlainTooltip { Text("转换底色") }
+                            },
+                            state = rememberTooltipState()
+                        ) {
+                            IconButton(
+                                onClick = {
+                                    HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
+                                    toggleColorState()
+                                }
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_change),
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
                         }
                     }
-                }
-            )
-        }
-    ){
-        paddingValues ->
-        Box(
-            modifier = Modifier.fillMaxSize()
-                .padding(paddingValues)
-        ){
-            PdfViewer(
-                file = file,
-                modifier = Modifier.fillMaxSize(),
-                onBack = onBack,
-                toggleColorState = {
-                    toggleColorState()
-                }
-            )
+                )
+            }
+        ) { paddingValues ->
+            Box(
+                modifier = Modifier.fillMaxSize()
+                    .padding(paddingValues)
+            ) {
+                PdfViewer(
+                    file = file,
+                    modifier = Modifier.fillMaxSize(),
+                    onBack = onBack,
+                    toggleColorState = {
+                        toggleColorState()
+                    }
+                )
+            }
         }
     }
 }
