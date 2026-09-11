@@ -10,15 +10,19 @@ import io.github.lqsymichaelluo.picturesandpdf.ui.theme.PicturesPDFTheme
 
 class SettingsActivity : ComponentActivity() {
     private val viewModel: SettingsViewModel by viewModels()
+    fun exit() {
+        this.finish()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             PicturesPDFTheme {
-                SettingsScreen(
+                SettingsNav(
                     viewModel = viewModel,
                     onBack = {
-                        this.finish()
+                        exit()
                     }
                 )
             }

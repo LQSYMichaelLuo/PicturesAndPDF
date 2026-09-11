@@ -14,8 +14,7 @@ android {
     defaultConfig {
         applicationId = "io.github.lqsymichaelluo.picturesandpdf"
         minSdk = 29
-        //noinspection OldTargetApi
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 1
         versionName = "1.0"
 
@@ -71,7 +70,6 @@ dependencies {
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.compose.material3)
-    implementation(libs.ui)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)

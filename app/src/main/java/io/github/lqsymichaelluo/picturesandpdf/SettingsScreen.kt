@@ -1,6 +1,5 @@
 package io.github.lqsymichaelluo.picturesandpdf
 
-import android.content.Context
 import androidx.activity.ComponentActivity
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.clickable
@@ -56,6 +55,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
+import androidx.navigation.NavController
 
 private val KEYBOARD_SHORTCUTS = listOf(
     ShortcutItem("一切返回操作", listOf("ESC")),
@@ -77,6 +77,7 @@ private val KEYBOARD_SHORTCUTS = listOf(
 fun SettingsScreen(
     viewModel: SettingsViewModel,
     onBack: () -> Unit = {},
+    navController: NavController
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val debugState by viewModel.debuggable
@@ -141,8 +142,6 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState())
         ) {
             val context = LocalContext.current
-            var licenseText by remember { mutableStateOf("License") }
-            var isLicenseShow by remember { mutableStateOf(false) }
             val isKeyboardShortcutsDialogShow by viewModel.isKeyboardShortcutsDialogShow.collectAsState()
             SettingsGroupTitle("存储")
             ListItem(
@@ -210,45 +209,27 @@ fun SettingsScreen(
                     },
                     onLongClick = {
                         HapticManager.vibrate(context, HapticManager.EFFECT_HEAVY_CLICK)
-                        isLicenseShow = true
+                        navController.navigate("license")
                     }
                 ),
                 supportingContent = { Text("Apache License 2.0") },
                 colors = ListItemDefaults.colors(),
                 content = { Text("在 Github 上查看源码") },
             )
-            LaunchedEffect(Unit) {
-                licenseText = context.readAsset("LICENSE")
-            }
-            val licenseScrollState = rememberScrollState()
-            if (isLicenseShow) {
-                AlertDialog(
-                    onDismissRequest = {
-                        isLicenseShow = false
+            ListItem(
+                modifier = Modifier.combinedClickable(
+                    onClick = {
+                        HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
                     },
-                    title = {
-                        Text("License")
-                    },
-                    text = {
-                        Text(
-                            text = licenseText,
-                            modifier = Modifier.verticalScroll(licenseScrollState)
-                        )
-                    },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                HapticManager.vibrate(context, HapticManager.EFFECT_CLICK)
-                                isLicenseShow = false
-                            }
-                        ) {
-                            Text(
-                                text = stringResource(R.string.ok)
-                            )
-                        }
+                    onLongClick = {
+                        HapticManager.vibrate(context, HapticManager.EFFECT_HEAVY_CLICK)
+                        navController.navigate("easter_egg")
                     }
-                )
-            }
+                ),
+                supportingContent = { Text("1.0.0-release") },
+                colors = ListItemDefaults.colors(),
+                content = { Text("版本名") },
+            )
             if (isKeyboardShortcutsDialogShow) {
                 AlertDialog(
                     onDismissRequest = viewModel::dismissKeyboardShortcutsDialog,
@@ -366,8 +347,4 @@ fun SettingsSwitchItem(
             onCheckedChange = onCheckedChange
         )
     }
-}
-
-fun Context.readAsset(fileName: String): String {
-    return assets.open(fileName).bufferedReader().use { it.readText() }
 }
