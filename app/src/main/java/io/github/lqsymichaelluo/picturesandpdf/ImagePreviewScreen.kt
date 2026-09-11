@@ -34,6 +34,7 @@ import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateMapOf
@@ -74,7 +75,7 @@ import kotlin.math.absoluteValue
 fun ImagePreviewScreen(
     pdfName: String = "unknown.pdf",
     currentIndex: Int = 0,
-    onBack: () -> Unit = {},
+    onBack: () -> Unit,
     imagePreviewViewModel: ImagePreviewViewModel,
     navController: NavController,
     sharedTransitionScope: SharedTransitionScope,
@@ -120,6 +121,23 @@ fun ImagePreviewScreen(
     fun getScale(page: Int) = pageScales.getOrPut(page) { Animatable(1f) }
     fun getOffset(page: Int) = pageOffsets.getOrPut(page) { 0f to 0f }
 
+    val selectedImageId = navController.currentBackStackEntry
+        ?.savedStateHandle
+        ?.getStateFlow<String?>("selected_image_id", null)
+        ?.collectAsState()
+    LaunchedEffect(selectedImageId?.value) {
+        val id = selectedImageId?.value
+        if (id != null) {
+            val index = id.toInt()
+            if (index >= 0) {
+                pagerState.scrollToPage(index)
+                pageScales.getOrPut(index) { Animatable(1f) }
+            }
+            navController.currentBackStackEntry
+                ?.savedStateHandle
+                ?.remove<String>("selected_image_id")
+        }
+    }
     Scaffold(
         modifier = Modifier
             .focusRequester(focusRequester)
@@ -204,6 +222,7 @@ fun ImagePreviewScreen(
                             if (!imagePreviewViewModel.imagePreviewList[pdfName]!!.hasTriggeredSort) {
                                 imagePreviewViewModel.setTriggerSort(pdfName, triggered = true)
                                 navController.navigate("image_sorting/$pdfName/0")
+                                imagePreviewViewModel.clickedImageIndex.intValue = pagerState.currentPage
                                 imagePreviewViewModel.setTriggerPreview(
                                     pdfName = pdfName,
                                     triggered = false
@@ -353,6 +372,7 @@ fun ImagePreviewScreen(
                             onPinchClosed = {
                                 if (!imagePreviewViewModel.imagePreviewList[pdfName]!!.hasTriggeredSort) {
                                     imagePreviewViewModel.setTriggerSort(pdfName, triggered = true)
+                                    imagePreviewViewModel.clickedImageIndex.intValue = pagerState.currentPage
                                     navController.navigate("image_sorting/$pdfName/0")
                                     imagePreviewViewModel.setTriggerPreview(
                                         pdfName = pdfName,

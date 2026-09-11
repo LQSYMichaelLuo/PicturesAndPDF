@@ -529,7 +529,7 @@ fun MainScreen(
                     } else if (
                         event.matches(key = Key.B, ctrl = true)
                     ) {
-                        navController.popBackStack()
+                        navController.safePopOnce()
                         true
                     } else if (
                         event.matches(key = Key.S, ctrl = true)

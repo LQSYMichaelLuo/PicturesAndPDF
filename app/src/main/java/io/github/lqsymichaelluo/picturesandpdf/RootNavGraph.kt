@@ -3,6 +3,7 @@ package io.github.lqsymichaelluo.picturesandpdf
 import android.view.DragEvent
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -11,6 +12,7 @@ import io.github.lqsymichaelluo.picturesandpdf.ui.theme.PicturesPDFTheme
 const val image_preview_id = "image_preview/{pdfName}/{index}"
 const val image_sorting_id = "image_sorting/{pdfName}/{state}"
 const val pdf_preview_id = "pdf_preview/{pdfName}"
+private var lastPop = 0L
 
 @Composable
 fun RootNavGraph(
@@ -24,6 +26,13 @@ fun RootNavGraph(
     pdfPreviewViewModel: PdfPreviewViewModel
 ) {
     val navController = rememberNavController()
+
+    fun fromSortingScreenToPreviewScreen(imageId: String) {
+        navController.previousBackStackEntry
+            ?.savedStateHandle
+            ?.set("selected_image_id", imageId)
+        navController.safePopOnce(2000)
+    }
     SharedTransitionLayout {
         NavHost(
             navController = navController,
@@ -55,7 +64,7 @@ fun RootNavGraph(
                         sharedTransitionScope = this@SharedTransitionLayout,
                         navAnimatedVisibilityScope = this@composable,
                         onBack = {
-                            navController.popBackStack()
+                            navController.safePopOnce()
                             imagePreviewViewModel.imagePreviewList[pdfName]
                                 ?.bitmapList
                                 ?.let { previewList ->
@@ -74,7 +83,7 @@ fun RootNavGraph(
                         pdfName = pdfName,
                         state = state,
                         onBack = {
-                            navController.popBackStack()
+                            navController.safePopOnce()
                             imagePreviewViewModel.setTriggerSort(
                                 pdfName = pdfName,
                                 triggered = false
@@ -83,6 +92,9 @@ fun RootNavGraph(
                                 name = pdfName,
                                 list = imagePreviewViewModel.imagePreviewList[pdfName]?.bitmapList
                             )
+                        },
+                        fromSortingScreenToPreviewScreen = { imageId ->
+                            fromSortingScreenToPreviewScreen(imageId = imageId)
                         },
                         imagePreviewViewModel = imagePreviewViewModel,
                         viewModel = viewModel,
@@ -103,11 +115,18 @@ fun RootNavGraph(
                         sharedTransitionScope = this@SharedTransitionLayout,
                         navAnimatedVisibilityScope = this@composable,
                         onBack = {
-                            navController.popBackStack()
+                            navController.safePopOnce()
                         },
                     )
                 }
             }
         }
     }
+}
+
+fun NavController.safePopOnce(intervalMs: Long = 1000): Boolean {
+    val now = System.currentTimeMillis()
+    if (now - lastPop < intervalMs) return false
+    lastPop = now
+    return popBackStack()
 }

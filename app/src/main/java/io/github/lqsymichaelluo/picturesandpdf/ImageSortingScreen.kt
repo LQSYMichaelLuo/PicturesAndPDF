@@ -17,7 +17,7 @@ import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.draganddrop.dragAndDropTarget
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.calculateZoom
@@ -102,6 +102,7 @@ fun ImageSortingScreen(
     state: Int = 0,
     onBack: () -> Unit = {},
     onImportPicture: (String?) -> Unit,
+    fromSortingScreenToPreviewScreen: (String) -> Unit,
     requestDragAndDropPermission: (DragEvent) -> Unit,
     releaseDragAndDropPermission: () -> Unit,
     imagePreviewViewModel: ImagePreviewViewModel,
@@ -344,7 +345,7 @@ fun ImageSortingScreen(
                                             pdfName = pdfName,
                                             triggered = true
                                         )
-                                        onBack()
+                                        fromSortingScreenToPreviewScreen(imagePreviewViewModel.clickedImageIndex.intValue.toString())
                                     }
                                 }
                                 event.changes.forEach {
@@ -429,17 +430,21 @@ fun ImageSortingScreen(
                                                     )
                                                 }
                                             )
-                                            .clickable(
+                                            .combinedClickable(
                                                 interactionSource = null,
                                                 indication = null,
-                                            ) {
-                                                HapticManager.vibrate(
-                                                    context,
-                                                    HapticManager.EFFECT_CLICK
-                                                )
-                                                deletePictureButtonShow =
-                                                    !deletePictureButtonShow
-                                            }
+                                                onClick = {
+                                                    fromSortingScreenToPreviewScreen("$index")
+                                                },
+                                                onDoubleClick = {
+                                                    HapticManager.vibrate(
+                                                        context,
+                                                        HapticManager.EFFECT_CLICK
+                                                    )
+                                                    deletePictureButtonShow =
+                                                        !deletePictureButtonShow
+                                                }
+                                            )
                                             .animateItem()
 
                                         if (imageBitmap != null) {

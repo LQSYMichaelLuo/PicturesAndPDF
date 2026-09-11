@@ -27,7 +27,7 @@ fun SettingsNav(
             PicturesPDFTheme{
                 EasterEggScreen(
                     onBack = {
-                        nav.popBackStack()
+                        nav.safePopOnce()
                     }
                 )
             }
@@ -36,7 +36,7 @@ fun SettingsNav(
             val context = LocalContext.current
             LicenseScreen(
                 onBack = {
-                    nav.popBackStack()
+                    nav.safePopOnce()
                 },
                 vibrate = {
                     HapticManager.vibrate(context, HapticManager.EFFECT_TICK)
