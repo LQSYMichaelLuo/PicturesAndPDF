@@ -49,3 +49,8 @@ class SettingsViewModel(app: Application) : AndroidViewModel(application = app) 
         _isKeyboardShortcutsDialogShow.value = false
     }
 }
+
+val Context.appVersionName: String
+    get() = runCatching {
+        packageManager.getPackageInfo(packageName, 0).versionName ?: "unknown"
+    }.getOrNull() ?: "unknown"

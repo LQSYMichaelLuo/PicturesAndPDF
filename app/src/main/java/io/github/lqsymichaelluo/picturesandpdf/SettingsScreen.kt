@@ -226,7 +226,7 @@ fun SettingsScreen(
                         navController.navigate("easter_egg")
                     }
                 ),
-                supportingContent = { Text("1.0.0-release") },
+                supportingContent = { Text(context.appVersionName) },
                 colors = ListItemDefaults.colors(),
                 content = { Text("版本名") },
             )
