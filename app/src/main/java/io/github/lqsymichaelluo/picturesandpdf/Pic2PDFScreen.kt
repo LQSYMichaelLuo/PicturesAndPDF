@@ -57,6 +57,9 @@ import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.PlainTooltip
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -667,62 +670,6 @@ fun PictureGroupCard(
                                         )
                                     )
                                     Spacer(modifier = Modifier.height(8.dp))
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .clickable {
-                                                HapticManager.vibrate(
-                                                    context,
-                                                    HapticManager.EFFECT_CLICK
-                                                )
-                                                val imagePreviewData = ImagePreviewData(
-                                                    bitmapList = bitmapList.toMutableStateList()
-                                                )
-                                                imagePreviewViewModel.addImagePreviewList(
-                                                    pdfName = "$newPDFNameTitle.pdf",
-                                                    imagePreviewData = imagePreviewData
-                                                )
-                                                rootNavController.navigate("image_sorting/$newPDFNameTitle.pdf/1")
-                                            },
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.SpaceBetween
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.padding(
-                                                8.dp
-                                            ),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Icon(
-                                                painter = painterResource(R.drawable.ic_sort),
-                                                contentDescription = null
-                                            )
-                                            Spacer(
-                                                modifier = Modifier.width(12.dp)
-                                            )
-                                            Text(
-                                                "为图片组排序"
-                                            )
-                                        }
-                                        Icon(
-                                            painter = painterResource(R.drawable.ic_arrow_back),
-                                            contentDescription = null,
-                                            modifier = Modifier
-                                                .rotate(180f)
-                                                .padding(
-                                                    10.dp
-                                                )
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    HorizontalDivider(
-                                        modifier = Modifier.padding(
-                                            start = 8.dp,
-                                            end = 8.dp
-                                        )
-                                    )
-                                    Spacer(modifier = Modifier.height(8.dp))
                                     Column(
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -816,12 +763,108 @@ fun PictureGroupCard(
                                                 )
                                             }
                                     ) {
-                                        Text(
-                                            "图片处理模块占位" + "文本", //.repeat(Random.nextInt(1,19)),
-                                            modifier = Modifier.padding(
-                                                8.dp
-                                            )
+                                        Spacer(
+                                            modifier = Modifier.height(4.dp)
                                         )
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .clickable {
+                                                    HapticManager.vibrate(
+                                                        context,
+                                                        HapticManager.EFFECT_CLICK
+                                                    )
+                                                    val imagePreviewData = ImagePreviewData(
+                                                        bitmapList = bitmapList.toMutableStateList()
+                                                    )
+                                                    imagePreviewViewModel.addImagePreviewList(
+                                                        pdfName = "$newPDFNameTitle.pdf",
+                                                        imagePreviewData = imagePreviewData
+                                                    )
+                                                    rootNavController.navigate("image_sorting/$newPDFNameTitle.pdf/1")
+                                                },
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(
+                                                    8.dp
+                                                ),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Icon(
+                                                    painter = painterResource(R.drawable.ic_sort),
+                                                    contentDescription = null
+                                                )
+                                                Spacer(
+                                                    modifier = Modifier.width(12.dp)
+                                                )
+                                                Text(
+                                                    "为图片组排序"
+                                                )
+                                            }
+                                            Icon(
+                                                painter = painterResource(R.drawable.ic_arrow_back),
+                                                contentDescription = null,
+                                                modifier = Modifier
+                                                    .rotate(180f)
+                                                    .padding(
+                                                        10.dp
+                                                    )
+                                            )
+                                        }
+                                        Spacer(
+                                            modifier = Modifier.height(8.dp)
+                                        )
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.padding(
+                                                start = 12.dp,
+                                                end = 12.dp
+                                            )
+                                        ) {
+                                            Text(
+                                                text = "缩放",
+                                                modifier = Modifier.padding(end = 16.dp),
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                            val options = listOf("原尺寸", "横向等宽", "比例等宽")
+
+                                            SingleChoiceSegmentedButtonRow(
+                                                modifier = Modifier.weight(1f)
+                                                    .padding(
+                                                        bottom = 4.dp
+                                                    )
+                                            ) {
+                                                options.forEachIndexed { index, label ->
+                                                    SegmentedButton(
+                                                        selected = index == viewModel.pictureInputList[PDFName]?.stretchMode,
+                                                        onClick = {
+                                                            HapticManager.vibrate(
+                                                                context,
+                                                                HapticManager.EFFECT_CLICK
+                                                            )
+                                                            viewModel.setStretchControlMode(PDFName, index)
+                                                        },
+                                                        shape = SegmentedButtonDefaults.itemShape(
+                                                            index = index,
+                                                            count = options.size
+                                                        ),
+                                                        colors = SegmentedButtonDefaults.colors(
+                                                            activeBorderColor = MaterialTheme.colorScheme.primary,
+                                                            inactiveBorderColor = MaterialTheme.colorScheme.primary,
+                                                            activeContainerColor = MaterialTheme.colorScheme.primary,
+                                                            activeContentColor = MaterialTheme.colorScheme.onPrimary,
+                                                            inactiveContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                                            inactiveContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                        )
+                                                    ) {
+                                                        Text(label)
+                                                    }
+                                                }
+                                            }
+                                        }
                                     }
                                     Spacer(modifier = Modifier.height(2.dp))
                                 }

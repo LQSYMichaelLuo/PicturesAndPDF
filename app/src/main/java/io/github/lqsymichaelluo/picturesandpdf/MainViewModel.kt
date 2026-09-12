@@ -145,6 +145,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         ) as PicturesOutputState
     }
 
+    fun setStretchControlMode(name: String, stretchMode: Int) {
+        pictureInputList[name] = pictureInputList[name]?.copy(
+            stretchMode = stretchMode
+        ) as PDFOutputState
+    }
+
     fun setFormatMode(name: String, formatMode: Int) {
         pdfInputList[name] = pdfInputList[name]?.copy(
             format = formatMode
@@ -421,6 +427,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         Convertor().PicturesToPDFForApp(
                             pic = state.bitmaps,
                             pdf = os as FileOutputStream,
+                            stretchMode = state.stretchMode,
                             usePreProcessing = state.usePreProcessing,
                             compressQuality = state.compressQuality,
                             callBack = {i, pageCount ->

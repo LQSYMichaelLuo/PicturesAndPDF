@@ -1,16 +1,17 @@
 package io.github.lqsymichaelluo.picturesandpdf
 
 import android.graphics.Bitmap
-import android.graphics.Bitmap.createBitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Matrix
+import android.graphics.Rect
 import android.graphics.pdf.PdfDocument
 import android.graphics.pdf.PdfRenderer
 import android.os.Build
 import android.os.ParcelFileDescriptor
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.core.graphics.createBitmap
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -82,7 +83,7 @@ class Convertor {
             val origH = page.height
             val targW = origW * s
             val targH = origH * s
-            val bitmap = createBitmap(
+            val bitmap = Bitmap.createBitmap(
                 targW.roundToInt(),
                 targH.roundToInt(),
                 Bitmap.Config.ARGB_8888
@@ -113,6 +114,7 @@ class Convertor {
         @param pdf: the "java.io.FileOutputStream" object of the PDF file to be created
         @param usePreProcessing: a boolean to decide pre-processing
         @param compressQuality: an int to decide the quality of pre-processing
+        @param stretchMode: an int who decides the stretch mode of pictures
         @param backgroundColor: a color whose value must be in the range 0x00000000 to 0xFFFFFFFF
         @param callBack: a function to receive an Int which means progress and an Int which means page count
      */
@@ -122,20 +124,47 @@ class Convertor {
         pdf: FileOutputStream?,
         usePreProcessing: Boolean = false,
         compressQuality: Int = 82,
+        stretchMode: Int = 0,
         backgroundColor: Color = Color(0x00000000),
         callBack: (Int, Int) -> Unit
     ): Boolean {
         if (!usePreProcessing) {
-            val document = android.graphics.pdf.PdfDocument()
+            val document = PdfDocument()
             for (i in pic.indices) {
                 val bitmap = pic[i]
                 if (bitmap.isRecycled) continue
+                val maxWidth = pic.maxOf { it.width }
+                val progressBitmap =  when (stretchMode) {
+                    1 -> {
+                        createBitmap(maxWidth, bitmap.height).also {
+                            Canvas(it).drawBitmap(
+                                bitmap,
+                                null,
+                                Rect(0, 0, maxWidth, bitmap.height),
+                                null
+                            )
+                        }
+                    }
+                    2 -> {
+                        val scale = maxWidth.toFloat() / bitmap.width
+                        val targetHeight = (bitmap.height * scale).toInt()
+                        createBitmap(maxWidth, targetHeight).also {
+                            Canvas(it).drawBitmap(
+                                bitmap,
+                                null,
+                                Rect(0, 0, maxWidth, targetHeight),
+                                null
+                            )
+                        }
+                    }
+                    else -> bitmap
+                }
                 val pageInfo = PdfDocument.PageInfo
-                    .Builder(bitmap.width, bitmap.height, i + 1).create()
+                    .Builder(progressBitmap.width, progressBitmap.height, i + 1).create()
                 val page = document.startPage(pageInfo)
                 val canvas = page.canvas
                 canvas.drawColor(backgroundColor.toArgb())
-                canvas.drawBitmap(bitmap, 0f, 0f, null)
+                canvas.drawBitmap(progressBitmap, 0f, 0f, null)
                 document.finishPage(page)
                 callBack(i + 1, pic.size)
             }
@@ -149,15 +178,38 @@ class Convertor {
             val originalBitmap = pic[i]
             if (originalBitmap.isRecycled) continue
 
-            val bmp = createBitmap(
-                originalBitmap.width, originalBitmap.height, Bitmap.Config.ARGB_8888
-            )
-            val canvas = Canvas(bmp)
+            val maxWidth = pic.maxOf { it.width }
+            val progressBitmap =  when (stretchMode) {
+                1 -> {
+                    createBitmap(maxWidth, originalBitmap.height).also {
+                        Canvas(it).drawBitmap(
+                            originalBitmap,
+                            null,
+                            Rect(0, 0, maxWidth, originalBitmap.height),
+                            null
+                        )
+                    }
+                }
+                2 -> {
+                    val scale = maxWidth.toFloat() / originalBitmap.width
+                    val targetHeight = (originalBitmap.height * scale).toInt()
+                    createBitmap(maxWidth, targetHeight).also {
+                        Canvas(it).drawBitmap(
+                            originalBitmap,
+                            null,
+                            Rect(0, 0, maxWidth, targetHeight),
+                            null
+                        )
+                    }
+                }
+                else -> originalBitmap
+            }
+            val canvas = Canvas(progressBitmap)
             canvas.drawColor(backgroundColor.toArgb())
             canvas.drawBitmap(originalBitmap, 0f, 0f, null)
 
             val compressedData = ByteArrayOutputStream().use { os ->
-                bmp.compress(
+                progressBitmap.compress(
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
                         Bitmap.CompressFormat.WEBP_LOSSY
                     else
@@ -218,7 +270,7 @@ class Convertor {
             val origH = page.height
             val targW = origW * s
             val targH = origH * s
-            val bitmap = createBitmap(
+            val bitmap = Bitmap.createBitmap(
                 targW.roundToInt(),
                 targH.roundToInt(),
                 Bitmap.Config.ARGB_8888
